@@ -362,40 +362,6 @@ Phase_reconstruction<- function(E, iterations, clockgenes=NULL,tau2=NULL, u=NULL
 #N: number of genes
 #M: number of samples
 
-data.preparation.all.healthy<-function(clockgenes, Mean=FALSE, onlyclock=FALSE){
-  exprs=vroom("Data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct")
-  names=colnames(exprs)[-c(1:2)]
-  samp <- fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt')
-  clockgenes=intersect(exprs$Description,clockgenes)
-  if (onlyclock){
-    exprs.clock.tibble=exprs[exprs$Description %in% clockgenes,]
-    rn=exprs.clock.tibble$Description
-    exprs.clock=as.matrix(exprs.clock.tibble[,-c(1,2)])
-    rownames(exprs.clock)=rn
-    log.mat=log2(exprs.clock+1)}
-  else{
-    rn=exprs$Description
-    exprs.mat=as.matrix(exprs[,-c(1,2)])
-    rownames(exprs.mat)=rn
-    log.mat=log2(exprs.mat+1)
-  }
-  E.mat=list()
-  for(tissue in unique(samp$SMTSD)){
-    tiss=samp$SAMPID[samp$SMTSD==tissue]
-    tiss.id=intersect(tiss, colnames(log.mat))
-    mat=log.mat[,tiss.id]
-    if(ncol(mat)>24){
-      if(!Mean){
-        mat<-mat-(replicate(ncol(mat), rowMeans(mat)))
-      }
-      clock=mat[clockgenes,]
-      tx=paste(tissue, "GTEX", sep=" ")
-      E.mat[[tx]]=list(E=mat, clock=clock, N=nrow(mat), M=ncol(mat), gene=rownames(mat))
-    }
-  }
-  return(E.mat)
-}
-
 
 #these functions are not important to understand or use, they are just called by other functions
 
@@ -624,3 +590,36 @@ infer_l=function(k,clockgenes=NULL){
 }
 
 
+data.preparation.all.healthy<-function(clockgenes, Mean=FALSE, onlyclock=FALSE){
+  exprs=vroom("Data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct")
+  names=colnames(exprs)[-c(1:2)]
+  samp <- fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt')
+  clockgenes=intersect(exprs$Description,clockgenes)
+  if (onlyclock){
+    exprs.clock.tibble=exprs[exprs$Description %in% clockgenes,]
+    rn=exprs.clock.tibble$Description
+    exprs.clock=as.matrix(exprs.clock.tibble[,-c(1,2)])
+    rownames(exprs.clock)=rn
+    log.mat=log2(exprs.clock+1)}
+  else{
+    rn=exprs$Description
+    exprs.mat=as.matrix(exprs[,-c(1,2)])
+    rownames(exprs.mat)=rn
+    log.mat=log2(exprs.mat+1)
+  }
+  E.mat=list()
+  for(tissue in unique(samp$SMTSD)){
+    tiss=samp$SAMPID[samp$SMTSD==tissue]
+    tiss.id=intersect(tiss, colnames(log.mat))
+    mat=log.mat[,tiss.id]
+    if(ncol(mat)>24){
+      if(!Mean){
+        mat<-mat-(replicate(ncol(mat), rowMeans(mat)))
+      }
+      clock=mat[clockgenes,]
+      tx=paste(tissue, "GTEX", sep=" ")
+      E.mat[[tx]]=list(E=mat, clock=clock, N=nrow(mat), M=ncol(mat), gene=rownames(mat))
+    }
+  }
+  return(E.mat)
+}
