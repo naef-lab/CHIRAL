@@ -1,6 +1,8 @@
+#file of 01/07/2020
 gene_inf<-c("DBP"   ,  "PER3"  ,  "TEF"   ,  "NR1D2" ,  "PER1" ,   "PER2"  ,  "NPAS2" ,  "ARNTL" ,  "NR1D1",  "CRY1"  ,  "CRY2","CIART" )
-load("data/CPM.all.norm.RData")
-source("functions_1.R")
+setwd("/scratch/For_cedric_with_pizza/git_scripts")
+load("/scratch/For_cedric_with_pizza/git_scripts/data/CPM.all.norm.RData")
+source("/scratch/For_cedric_with_pizza/git_scripts/CHIRAL/functions_1.R")
 E.matrix=list()
 #phase inferenece tissue by tissue
 for(name in names(CPM.all.norm)){
@@ -10,9 +12,9 @@ for(name in names(CPM.all.norm)){
   if(!is.null(E$E)){
     E$tissue=name
     E$type="GTEx"
-    gene="DBP"
+    #gene="PER3"
     #E$E=as.matrix(subset(E$E,rowMeans(E$E)>0))
-    cat(name, " ", dim(E$E), gene, "is present", any(gsub("^.*_", "",rownames(E$E))==gene),  "\n")
+    #cat(name, " ", dim(E$E), gene, "is present", any(gsub("^.*_", "",rownames(E$E))==gene),  "\n")
     E.matrix[[name]]=E}
 }
 
@@ -44,7 +46,7 @@ OUT= mclapply(E.matrix,infer_l, gene_inf, mc.cores=16)
   for(i in 1:ncol(phi.study)){
     phi.comp[,i]=complex(argument=phi.study[,i])
   }
-  hist(Arg(phi.comp[4,]))
+  #hist(Arg(phi.comp[4,]))
   phit=rowMeans(phi.comp,na.rm = TRUE)
   phis=phit
   for(i in 1:nrow(phi.comp)){
@@ -63,7 +65,7 @@ OUT= mclapply(E.matrix,infer_l, gene_inf, mc.cores=16)
   }
   phit=phis
 }
-phi=Arg(phit[good.s])%%(2*pi)
+phi=Arg(phit)%%(2*pi)
 
 
 
