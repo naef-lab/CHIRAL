@@ -6,6 +6,8 @@ as.paper=TRUE
 
 if(!as.paper){
   
+  phio=phi=get(load("./data/DIP.RData"))
+  
   E=CPM_to_E(CPM.all.norm.large)
   
   E=split_E_sex(E, samp)
@@ -21,18 +23,19 @@ if(!as.paper){
   OUT.age=Fit_OUT(OUT.age)
 }
 
-if(as_paper){
-  OUT.MF=get(load(file.path(wd,"paper_data/OUT_MF.RData")))
-  OUT.age=get(load(file.path(wd,"paper_data/OUT_age_n5.RData")))
-  OUT.all=get(load(file.path(wd,"paper_data/OUT_all.RData")))
+if(as.paper){
+  OUT.MF=get(load("./paper_data/OUT_paper/OUT_MF.RData"))
+  OUT.age=get(load("./paper_data/OUT_paper/OUT_age_n5.RData"))
+  OUT.all=get(load("./paper_data/OUT_paper/OUT_all.RData"))
+  phio=phi=get(load("./paper_data/DIP.RData"))
 }
 
 
-SS.age=get(load(file.path(wd,"papaer_data/SS_age_n5.RData")))
-SS.MF=get(load(file.path(wd,"papaer_data/SS_MF.RData")))
+SS.age=get(load("./paper_data/OUT_paper/SS_age_n5.RData"))
+SS.MF=get(load("./paper_data/OUT_paper/SS_MF.RData"))
 
-colroma=vroom(file.path(wd, "paper_data/roma.txt"),  col_names = FALSE)
-full_col=vroom(file.path(wd,"paper_data/GO_full-colorandum.csv"))
+colroma=vroom("./paper_data/roma.txt",  col_names = FALSE, show_col_types = FALSE)
+full_col=vroom("./paper_data/GO_full-colorandum.csv", show_col_types = FALSE)
 full_col=full_col[full_col$Class!="Cells",]
 dec_names=full_col$`Short name`
 names(dec_names)=full_col$`Full name`
@@ -40,10 +43,10 @@ colorandum=full_col$`# color`
 names(colorandum)=full_col$`Full name`
 nmz=unique(full_col$Class)
 
-dir.create(file.path(wd, "Figure2"), showWarnings = FALSE)
-dir.create(file.path(wd, "Figure3"), showWarnings = FALSE)
+dir.create("./Figure2", showWarnings = FALSE)
+dir.create("./Figure3", showWarnings = FALSE)
 
-phio=phi=get(load(file.path(wd,"data/DIPs.RData")))
+
 
 ###################### Cumulative model selection #########################
 
@@ -57,14 +60,14 @@ for (strict in c(FALSE)) {
   for (div in c("MF", "age_n5")){
     qcut=2
     if(div=="MF") OUT= OUT.MF
-    if(div=="age") OUT= OUT.age
+    if(div=="age_n5") OUT= OUT.age
     pox=unique(gsub("^.*-", "", names(OUT)))
     nn=names(OUT)[duplicated(gsub("-old", "",gsub("-young", "",gsub("-Female", "",gsub("-Male", "", names(OUT))))))]
     nn=gsub("-old", "",gsub("-young", "",gsub("-Female", "",gsub("-Male", "", nn))))
     OUT=OUT[c(paste(nn,pox[1], sep="-"),paste(nn,pox[2], sep="-"))]
     for(val in c("R")){
-      if(div=="MF") pdf(paste(dir,"/Figure2/Fig2_C-F-I.pdf", sep=""))
-      if(div=="age")pdf(paste(dir,"/Figure3/Fig3_B-F-I.pdf", sep=""))
+      if(div=="MF") pdf("./Figure2/Fig2_C-F-I.pdf")
+      if(div=="age_n5")pdf("./Figure3/Fig3_B-F-I.pdf")
       
       all=NULL
       tbt=NULL
@@ -255,11 +258,11 @@ for (strict in c(FALSE)) {
 
 for (div in c("MF", "age_n5")) {
   full_gene_phi=NULL
-  if(div=="MF") pdf(paste(wd,"/Figure2/Fig2_B-E-H.pdf", sep=""))
-  if(div=="age")pdf(paste(wd,"/Figure3/Fig3_C-E-H.pdf", sep=""))
+  if(div=="MF") pdf("./Figure2/Fig2_B-E-H.pdf")
+  if(div=="age_n5")pdf("./Figure3/Fig3_C-E-H.pdf")
   if(div=="MF") OUT= OUT.MF
-  if(div=="age") OUT= OUT.age
-  phenot=get(load(file.path(wd, "paper_data/phenotypes.RData")))
+  if(div=="age_n5") OUT= OUT.age
+  phenot=get(load("./paper_data/phenotypes.RData"))
   phenot$SUBJID=gsub("^.*-","",phenot$SUBJID)
   phenot$age_cat="middle"
   phenot$sex=phenot$SEX
@@ -267,7 +270,7 @@ for (div in c("MF", "age_n5")) {
   phenot$sex[phenot$SEX==2]="female"
   phenot$age_cat[phenot$AGE>60]="old"
   phenot$age_cat[phenot$AGE<50]="young"
-  phio=get(load(file.path(wd,"data/DIPs.RData")))
+  phio=get(load("./data/DIPs.RData"))
   if(div=="MF"){
     phi.dff=NULL
     for(i in c(1:2)){
@@ -505,36 +508,16 @@ for (div in c("MF", "age_n5")) {
     theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15))+
     labs(x="Tissue", y="Relative fraction of genes in each model")
   
-  if(div=="MF") ggsave( filename= file.path(wd,"Figures2-3/Fig2_D1.pdf", sep=""),p1,width = 12, height = 10)
-  if(div=="age") ggsave( filename= file.path(wd,"Figures2-3/Fig2_D1.pdf", sep=""),p1,width = 12, height = 10)    
+  if(div=="MF") ggsave( filename= "./Figures2-3/Fig2_D1.pdf",p1,width = 12, height = 10)
+  if(div=="age_n5") ggsave( filename= "./Figures2-3/Fig2_D1.pdf",p1,width = 12, height = 10)    
   
   p2=ggplot(totz, aes(x=tissue, y=genes))+geom_bar(stat="identity", fill = colroma$hex[250])+
     theme_minimal()+theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15),panel.grid.minor = element_blank(),panel.grid.major = element_blank())+
     labs(x="Tissue", y="total number of genes in models 2 to 5")+theme(axis.title.x = element_blank(), axis.text.x = element_blank())
   
-  if(div=="MF") ggsave( filename= file.path(wd,"Figures2-3/Fig2_D2.pdf", sep=""),p2,width = 12, height = 10)
-  if(div=="age") ggsave( filename= file.path(wd,"Figures2-3/Fig2_D2.pdf", sep=""),p2,width = 12, height = 10) 
+  if(div=="MF") ggsave( filename= "./Figures2-3/Fig2_D2.pdf",p2,width = 12, height = 10)
+  if(div=="age_n5") ggsave( filename= "./Figures2-3/Fig2_D2.pdf",p2,width = 12, height = 10) 
 }
-
-
-
-WP_full=vroom(file.path(wd,"paper_data/WikiPathway_2021_Human", col_names = FALSE))
-WP=WP_full$X1
-for(i in 1:nrow(WP_full)){
-  tmp=WP_full[i,]
-  tmp=tmp[which(!is.na(tmp))]
-  tmp.str=tmp[1][1]
-  for (j in 2:ncol(tmp)) {
-    tmp.str=paste(tmp.str, tmp[j][1])
-  }
-  WP[i]=tmp.str
-}
-
-WP.ls=lapply(WP, function(x){a=strsplit(x, "\t")[[1]]
-return(a[3:length(a)])})
-
-names(WP.ls)=unlist(lapply(WP, function(x){a=strsplit(x, "\t")[[1]][1]}))
-nm=names(WP.ls)[grep("WP197", names(WP.ls))[1]]
 
 lb=6
 pt=3
@@ -545,7 +528,7 @@ for (div in c("MF", "age_n5")){
     OUT= OUT.MF
     Plot_cSVD(OUT, gene_inf, full_col,loc =file.path(wd, "Figure2/Fig2_A") , CT=15, dot_size =pt, label_size = lb, text_size = sz)
   }
-  if(div=="age") {
+  if(div=="age_n5") {
     OUT= OUT.age
     Plot_cSVD(OUT, gene_inf, full_col,loc =file.path(wd, "Figure3/Fig3_A") , CT=15, dot_size =pt, label_size = lb, text_size = sz)
   }

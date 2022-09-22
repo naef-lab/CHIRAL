@@ -1,28 +1,32 @@
-wd=getwd()
+rm(list=ls())
+gc()
+source("supplementary_functions.R")
+source("CHIRAL.R")
 ####### RUN AFTER from_cpm #######
 
-colroma=vroom(file.path(wd, "paper_data/roma.txt"),  col_names = FALSE)
+colroma=vroom("./paper_data/roma.txt",  col_names = FALSE)
 colroma$hex=paste("#", as.hexmode(round(colroma$X1*255,0)),as.hexmode(round(colroma$X2*255,0)),as.hexmode(round(colroma$X3*255,0)), sep="")
-full_col=vroom(file.path(wd,"paper_data/GO_full-colorandum.csv"))
+full_col=vroom("./paper_data/GO_full-colorandum.csv", show_col_types = FALSE)
 
 as.paper=TRUE
 
-if(as_paper){
-  load(file.path(wd,"paper_data/OUT_all.RData"))
-  load(file.path(wd,"paper_data/DIPs.RData"))
-  colroma=vroom(paste(wd, "/paper_data/roma.txt", sep=""),  col_names = FALSE)
+if(as.paper){
+  load("./paper_data/OUT_paper/OUT_all.RData"))
+  load("./paper_data/DIPs.RData"))
+  colroma=vroom("./paper_data/roma.txt",  col_names = FALSE, show_col_types = FALSE)
 }
 if(!as.paper){
-  load(file.path(wd,"data/OUT_all.RData"))
-  load(file.path(wd,"data/DIPs.RData"))
+  load("./data/OUT_all.RData"))
+  load("./data/DIPs.RData"))
 }
 
-dir.create(file.path(wd, "Figure1"), showWarnings = FALSE)
+dir.create("./Figure1"), showWarnings = FALSE)
 
-pdf(paste( wd, "/Figure1/Fig1_F.pdf", sep=""))
+pdf(".//Figure1/Fig1_F.pdf", sep="")
 Plot_density(OUT, phi,cut=0.2, varz="qval")
 dev.off()
 
+full_col=full_col[full_col$Class!="Cells",]
 dec_names=full_col$`Short name`
 names(dec_names)=full_col$`Full name`
 colorandum=full_col$`# color`
@@ -36,7 +40,7 @@ qcut=0.2
 Rcut=0.5
 
 {
-  pdf(file.path(wd,"Figure1/Fig1_G.pdf"))
+  pdf("./Figure1/Fig1_G.pdf")
   phi.full=NULL
   pho=NULL
   for(name in names(OUT)){
@@ -84,13 +88,52 @@ Rcut=0.5
 
 
 
-for(val in c("R")){
-  all=NULL
+val="R"
+all=NULL
+tbt=NULL
+#val="pval"
+
+pdf("./Figure1/Fig1_H.pdf")
+for(j in names(OUT)){
+  out=OUT[[j]]
+  fit=out$data.fit
+  #interesting.genes=inter.genes
+  inf.phi=out$phi
+  exprx=out$E
+  gene.list=gsub("\\|.*$","",gsub("^.*_", "",fit$genes))
+  clock.coord=sapply(out$geni,function(x){match(x, gene.list)})
+  clock.coord=clock.coord[!is.na(clock.coord)]
+  full=fit[,c("amp","a","b","R2", "genes","qval", "pval")]
+  full=subset(full, pval<pcut)
+  full=subset(full, qval<qcut)
+  full$R=2*sqrt(full$a^2+full$b^2)
+  full=subset(full, R>Rcut)
+  if(nrow(full)>1){
+    full$kind=names(OUT)[j]
+    all=rbind(all,full)
+    breaks = seq(0, max(max(full[,val]),1), by=0.01) 
+    if(val!="R") breaks=breaks^11
+    amp.cut = cut(full[,val], breaks, right=FALSE) 
+    freq.cut = table(amp.cut) 
+    if(val=="R") freq.cut = rev(freq.cut) #also tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=names(OUT)[j])
+    cumsum.frq=c(cumsum(freq.cut),nrow(full[,val]))+1
+    tbz=tibble(R=breaks[-1], n.genes=cumsum.frq, kind=j)
+    if(val=="R") tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=j)
+    tbt=rbind(tbt,tbz)
+  }
+}
+if(!is.null(tbt)){
+  if (val=="R") print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind), size=th)+scale_y_log10(limits=c(1,2500))+
+                        labs(title="All tissues",y="# of genes", x="log2(peak to trough)", color="Category")+theme_minimal()+
+                        scale_color_manual(values=colorandum[unique(tbt$kind)])+theme(legend.position = "none",text = element_text(size=sz)))
+  else print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind), size=th)+scale_y_log10()+scale_x_continuous(trans=reverselog_trans(10))+
+               labs(title="All tissues",y="# of genes", x=val)+theme_minimal()+scale_color_manual(values=colorandum[unique(tbt$kind)])+
+               theme(legend.position = "none",text = element_text(size=sz)))
+}
+for(i in nmz){ 
+  ct=which(full_col$Class==i)
   tbt=NULL
-  #val="pval"
-  
-  pdf(file.path("new_plots_meanphi/Figure1/Fig1_H"))
-  for(j in names(OUT)){
+  for(j in full_col$`Full name`[ct]){
     out=OUT[[j]]
     fit=out$data.fit
     #interesting.genes=inter.genes
@@ -100,6 +143,7 @@ for(val in c("R")){
     clock.coord=sapply(out$geni,function(x){match(x, gene.list)})
     clock.coord=clock.coord[!is.na(clock.coord)]
     full=fit[,c("amp","a","b","R2", "genes","qval", "pval")]
+    if (val=="R") {full=subset(full, pval<pcut)}
     full=subset(full, pval<pcut)
     full=subset(full, qval<qcut)
     full$R=2*sqrt(full$a^2+full$b^2)
@@ -108,7 +152,7 @@ for(val in c("R")){
       full$kind=names(OUT)[j]
       all=rbind(all,full)
       breaks = seq(0, max(max(full[,val]),1), by=0.01) 
-      if(val!="R") breaks=breaks^11
+      if(val!="R") breaks=breaks^11 
       amp.cut = cut(full[,val], breaks, right=FALSE) 
       freq.cut = table(amp.cut) 
       if(val=="R") freq.cut = rev(freq.cut) #also tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=names(OUT)[j])
@@ -119,69 +163,30 @@ for(val in c("R")){
     }
   }
   if(!is.null(tbt)){
-    if (val=="R") print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind), size=th)+scale_y_log10(limits=c(1,2500))+
-                          labs(title="All tissues",y="# of genes", x="log2(peak to trough)", color="Category")+theme_minimal()+
-                          scale_color_manual(values=colorandum[unique(tbt$kind)])+theme(legend.position = "none",text = element_text(size=sz)))
-    else print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind), size=th)+scale_y_log10()+scale_x_continuous(trans=reverselog_trans(10))+
-                 labs(title="All tissues",y="# of genes", x=val)+theme_minimal()+scale_color_manual(values=colorandum[unique(tbt$kind)])+
-                 theme(legend.position = "none",text = element_text(size=sz)))
+    if(val=="R") print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
+                         scale_y_log10(limits=c(1,2500))+labs(title=i,y="# of genes", x="log2(peak to trough)",  color="Category", linetype="Category")+
+                         theme_minimal()+scale_color_manual(values=colorandum[unique(tbt$kind)])+
+                         theme(text = element_text(size=sz), legend.position = "none"))#+theme(legend.position = "none"))
+    else print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
+                 scale_y_log10()+scale_x_continuous(trans=reverselog_trans(10))+labs(title=i,y="# of genes", x=val)+
+                 theme_minimal()+scale_color_manual(values=colorandum[unique(tbt$kind)])+theme(text = element_text(size=sz), legend.position = "top"))#+theme(legend.position = "none"))
   }
-  for(i in nmz){ 
-    ct=which(full_col$Class==i)
-    tbt=NULL
-    for(j in full_col$`Full name`[ct]){
-      out=OUT[[j]]
-      fit=out$data.fit
-      #interesting.genes=inter.genes
-      inf.phi=out$phi
-      exprx=out$E
-      gene.list=gsub("\\|.*$","",gsub("^.*_", "",fit$genes))
-      clock.coord=sapply(out$geni,function(x){match(x, gene.list)})
-      clock.coord=clock.coord[!is.na(clock.coord)]
-      full=fit[,c("amp","a","b","R2", "genes","qval", "pval")]
-      if (val=="R") {full=subset(full, pval<pcut)}
-      full=subset(full, pval<pcut)
-      full=subset(full, qval<qcut)
-      full$R=2*sqrt(full$a^2+full$b^2)
-      full=subset(full, R>Rcut)
-      if(nrow(full)>1){
-        full$kind=names(OUT)[j]
-        all=rbind(all,full)
-        breaks = seq(0, max(max(full[,val]),1), by=0.01) 
-        if(val!="R") breaks=breaks^11 
-        amp.cut = cut(full[,val], breaks, right=FALSE) 
-        freq.cut = table(amp.cut) 
-        if(val=="R") freq.cut = rev(freq.cut) #also tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=names(OUT)[j])
-        cumsum.frq=c(cumsum(freq.cut),nrow(full[,val]))+1
-        tbz=tibble(R=breaks[-1], n.genes=cumsum.frq, kind=j)
-        if(val=="R") tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=j)
-        tbt=rbind(tbt,tbz)
-      }
-    }
-    if(!is.null(tbt)){
-      if(val=="R") print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
-                           scale_y_log10(limits=c(1,2500))+labs(title=i,y="# of genes", x="log2(peak to trough)",  color="Category", linetype="Category")+
-                           theme_minimal()+scale_color_manual(values=colorandum[unique(tbt$kind)])+
-                           theme(text = element_text(size=sz), legend.position = "none"))#+theme(legend.position = "none"))
-      else print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
-                   scale_y_log10()+scale_x_continuous(trans=reverselog_trans(10))+labs(title=i,y="# of genes", x=val)+
-                   theme_minimal()+scale_color_manual(values=colorandum[unique(tbt$kind)])+theme(text = element_text(size=sz), legend.position = "top"))#+theme(legend.position = "none"))
-    }
-  }
-  dev.off()
 }
+dev.off()
 
 
 lb=6
 pt=3
 sz=18
+gene_inf=get(load("./paper_data/CGRs.RData"))
+HSF1_genes=get(load("./paper_data/HSF1_g.RData"))
 {
-  Plot_cSVD(OUT, gene_inf, full_col,loc =file.path("Figure1/Fig1_B.pdf") , CT=15, dot_size =pt, label_size = lb, text_size = sz)
-  Plot_cSVD(OUT, HSF1_genes, full_col,loc =file.path(wd, "Figure1/Fig1_D.pdf") , CT=5, dot_size =pt, label_size = lb, text_size = sz, ymax=0.6)
+  Plot_cSVD(OUT, gene_inf, full_col,loc ="./Figure1/Fig1_B" , CT=15, dot_size =pt, label_size = lb, text_size = sz)
+  Plot_cSVD(OUT, HSF1_genes, full_col,loc "./Figure1/Fig1_D" , CT=5, dot_size =pt, label_size = lb, text_size = sz, ymax=0.6)
 }
 
 {
-  pdf(file.path(wd, "Figure1/Fig1_C.pdf"))
+  pdf("./Figure1/Fig1_C.pdf")
   tissuex=c("Brain - Cortex", "Adipose - Visceral (Omentum)")
   geni=gene_inf[c(2,8)]
   Plot_profiles(OUT, tissuex, geni, val="qval")
@@ -189,7 +194,7 @@ sz=18
 }
 
 {
-  pdf(file.path(wd, "Figure1/Fig1_E.pdf"))
+  pdf("./Figure1/Fig1_E.pdf")
   tissuex=c("Brain - Amygdala", "Spleen")
   geni=c("HSPH1", "HSPA1B")
   Plot_profiles(OUT, tissuex, geni, val="qval")
