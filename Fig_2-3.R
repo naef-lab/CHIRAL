@@ -270,7 +270,7 @@ for (div in c("MF", "age_n5")) {
   phenot$sex[phenot$SEX==2]="female"
   phenot$age_cat[phenot$AGE>60]="old"
   phenot$age_cat[phenot$AGE<50]="young"
-  phio=get(load("./data/DIPs.RData"))
+  phio=ifelse(as.paper,  get(load("./paper_data/DIP.RData")), get(load("./data/DIPs.RData")))
   if(div=="MF"){
     phi.dff=NULL
     for(i in c(1:2)){
@@ -485,7 +485,6 @@ for (div in c("MF", "age_n5")) {
     }
     for (mds in c(2:5)) {
       sg=rownames(ss)[which(ss$model.c %in% mds)]
-      #tmg=tibble(tissue=j,gene=sg, model=mds)
       tmg[2]=length(sg)
       tmg[3]=tmg[2]/tot
       tmg[4]=mds
@@ -508,21 +507,20 @@ for (div in c("MF", "age_n5")) {
     theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15))+
     labs(x="Tissue", y="Relative fraction of genes in each model")
   
-  if(div=="MF") ggsave( filename= "./Figures2-3/Fig2_D1.pdf",p1,width = 12, height = 10)
-  if(div=="age_n5") ggsave( filename= "./Figures2-3/Fig2_D1.pdf",p1,width = 12, height = 10)    
+  if(div=="MF") ggsave( filename= "./Figures2/Fig2_D1.pdf",p1,width = 12, height = 10)
+  if(div=="age_n5") ggsave( filename= "./Figures2/Fig3_D1.pdf",p1,width = 12, height = 10)    
   
   p2=ggplot(totz, aes(x=tissue, y=genes))+geom_bar(stat="identity", fill = colroma$hex[250])+
     theme_minimal()+theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15),panel.grid.minor = element_blank(),panel.grid.major = element_blank())+
     labs(x="Tissue", y="total number of genes in models 2 to 5")+theme(axis.title.x = element_blank(), axis.text.x = element_blank())
   
-  if(div=="MF") ggsave( filename= "./Figures2-3/Fig2_D2.pdf",p2,width = 12, height = 10)
-  if(div=="age_n5") ggsave( filename= "./Figures2-3/Fig2_D2.pdf",p2,width = 12, height = 10) 
+  if(div=="MF") ggsave( filename= "./Figures2/Fig2_D2.pdf",p2,width = 12, height = 10)
+  if(div=="age_n5") ggsave( filename= "./Figures3/Fig3_D2.pdf",p2,width = 12, height = 10) 
 }
 
 lb=6
 pt=3
 sz=18
-gene_WP=WP.ls[[nm]]
 for (div in c("MF", "age_n5")){
   if(div=="MF") {
     OUT= OUT.MF

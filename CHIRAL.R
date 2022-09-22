@@ -1,8 +1,30 @@
+#' Infer the circular phase of gene expression samples  
+#'
+#' @param E Required matrix of gene expression. Samples should be on the columns, genes on the rows. Rows should be named to perform the inference on a subset of the matrix.
+#' @param iterations Number of maximum iterations, default 500.
+#' @param clockgenes Set of clock genes (or relevant genes) to be used for the inference. Should be a of the form c("gene1", "gene2") and subset of the rownames, default NULL.
+#' @param tau2 Tau parameter for the prior on the gene coefficient, we suggest to leave the default. It is automatically calculated by the algorithm, can be changed if needed. Default NULL.
+#' @param u u parameter for the prior on the gene means, we suggest to leave the default. It is automatically calculated by the algorithm, can be changed if needed. Default NULL.
+#' @param sigma2 standerd deviation of the data points fro the prediction, we suggest to leave the default. It is automatically calculated by the algorithm, can be changed if needed. default NULL.
+#' @param TSM Switches the two state model in the EM on and off, default TRUE.
+#' @param mean.centre.E parameter to decide if center around the empirical mean of the data, default TRUE.
+#' @param pbar shows the progress bar on max number of iterations, default TRUE.
+#' @param phi.start set of initial guess for the phases, default NULL.
+#' @param standardize standardize the matrix used for the inference, default FALSE.
+#' @param GTEX_names To set to true only if analyzing GTEx data, converts row names from ENSGXXX_GeneName|XX to GeneName. Default FALSE
+#' @return A list containing: inferred phases, inferred standard deviation of the data, gene parameters gene weigths (relevant with two state model),
+#' @return iteration of stop, inferred standard deviation of data of rhythmic genes, the input matrix, history of the Q finction of the EM, genes selected, matrix used for inference.
+#' @examples
+#' CHIRAL(data_exon)
+#' CHIRAL(data_exon, iterations=50, clockgenes=gene_inf, standardize=TRUE)
+
+
+
+
 CHIRAL<- function(E, iterations=500, clockgenes=NULL,tau2=NULL, u=NULL, 
-                  sigma2=NULL, TSM=TRUE, mean.centre.E=TRUE, q=0.1, update.q=FALSE, 
-                  wt=0, pbar=TRUE, pca=FALSE, pca_comp=30, 
+                  sigma2=NULL, TSM=TRUE, mean.centre.E=TRUE, q=0.1, update.q=FALSE, pbar=TRUE,
                   phi.start=NULL, standardize=FALSE, GTEx_names=FALSE){
-  require(MASS)
+  #require(MASS)
   
   # E is the data matrix 
   #on the rows there are genes, rows sould be named
@@ -11,14 +33,6 @@ CHIRAL<- function(E, iterations=500, clockgenes=NULL,tau2=NULL, u=NULL,
   
   id=as.vector(c(1,1,1,1))
   E=as.matrix(E)
-  if(pca==TRUE){
-    tempo=princomp(E)
-    E=tempo$loadings
-    if(ncol(E)>pca_comp){
-      E=E[,1:pca_comp]
-    }
-    E=t(E)
-  }
   
   
   E=E[ , colSums(is.na(E)) == 0]
@@ -28,9 +42,18 @@ CHIRAL<- function(E, iterations=500, clockgenes=NULL,tau2=NULL, u=NULL,
   ### Clock gene selection ###
   
   rownames(E)=toupper(rownames(E))
-  if(is.null(clockgenes)){clockgenes=rownames(E)}
+  if(is.null(clockgenes)){
+    if(is.null(rownames(E))){
+      rownames(E)=1:nrow(E)
+    }
+    clockgenes=rownames(E)
+  }
   clockgenes=toupper(clockgenes)
   gene.list=rownames(E)
+  
+  
+  
+  E.full=E
   
   if(GTEx_names){
     gene.list=gsub("^.*_", "",gene.list)
@@ -186,7 +209,7 @@ CHIRAL<- function(E, iterations=500, clockgenes=NULL,tau2=NULL, u=NULL,
       if(pox[mpox,3]==100000){
         cat("\n",pox,"not any solution on the circle at iteration",i,"\n")
         stop()
-        return(list(phi=phiold,Qhist=Qhist,sigma=sigma2old, alpha=alpha, pesi=W))
+        return(list(phi=phiold,Qhist=Qhist,sigma=sigma2old, alpha=alpha, weights=W))
       }
       return(c(pox[mpox,],pox[,3]))
     })
@@ -221,7 +244,7 @@ CHIRAL<- function(E, iterations=500, clockgenes=NULL,tau2=NULL, u=NULL,
     
     if(max(abs(phi-phiold))<(0.001)){
       if(pbar){cat("\n algorithm has converged \n")}
-      return(list(phi=phi,sigma=sigma2, alpha=alpha, pesi=W, iter=i, sigma.m1=sigma2.m1, E=E.full, Qhist=Qhist, geni=geni, clock=E))
+      return(list(phi=phi,sigma=sigma2, alpha=alpha, weights=W, iter=i, sigma.m1=sigma2.m1, E=E.full, Qhist=Qhist, geni=geni, clock=E))
     }
     
     ### Update parameters for next step of EM ###
@@ -251,7 +274,7 @@ CHIRAL<- function(E, iterations=500, clockgenes=NULL,tau2=NULL, u=NULL,
   if(pbar){close(pb)
     cat("\n")}
   ### Close function after specified iterattions ###
-  return(list(phi=phi,Qhist=Qhist,sigma=sigma2, alpha=alpha, pesi=W, iter=i,sigma.m1=sigma2.m1, E=E.full))
+  return(list(phi=phi,Qhist=Qhist,sigma=sigma2, alpha=alpha, weights=W, iter=i,sigma.m1=sigma2.m1, E=E.full))
 }
 
 ### Spin glass approxiamtion to have initial condition for EM ###

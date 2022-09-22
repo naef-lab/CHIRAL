@@ -11,16 +11,16 @@ full_col=vroom("./paper_data/GO_full-colorandum.csv", show_col_types = FALSE)
 as.paper=TRUE
 
 if(as.paper){
-  load("./paper_data/OUT_paper/OUT_all.RData"))
-  load("./paper_data/DIPs.RData"))
+  load("./paper_data/OUT_paper/OUT_all.RData")
+  load("./paper_data/DIPs.RData")
   colroma=vroom("./paper_data/roma.txt",  col_names = FALSE, show_col_types = FALSE)
 }
 if(!as.paper){
-  load("./data/OUT_all.RData"))
-  load("./data/DIPs.RData"))
+  load("./data/OUT_all.RData")
+  load("./data/DIPs.RData")
 }
 
-dir.create("./Figure1"), showWarnings = FALSE)
+dir.create("./Figure1", showWarnings = FALSE)
 
 pdf(".//Figure1/Fig1_F.pdf", sep="")
 Plot_density(OUT, phi,cut=0.2, varz="qval")
