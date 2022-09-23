@@ -15,7 +15,7 @@ Given the fully probabilistic and unsupervised approach to the problem `CHIRAL` 
 To install `CHIRAL` run the following code in R.
 ```
 install.packages("devtools")
-devtools::install_github("naef-lab/CHIRAL")
+devtools::install_github("naef-lab/CHIRAL/Pkg/CHIRAL")
 ```
 ## Quick start
 ### Example dataset 
