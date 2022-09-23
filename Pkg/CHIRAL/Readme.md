@@ -23,7 +23,7 @@ devtools::install_github("naef-lab/CHIRAL")
 
 ### Running an example
 ```
-require(Chiral)
+require(CHIRAL)
 
 data<-example[["Muscle_exon"]]            #Import the data. This matrix is formatted as it should be: on the columns we have samples, on the rows we have genes, rownames are the gene names (in this case ENSG)
 
@@ -61,7 +61,7 @@ abs(cor.c(true.phi, inf.phi))                                           #Get the
 
 adj.phi=adjust.phases(true.phi, inf.phi)                                #Adjust the phases for plotting
 
-plot(true.phi, inf.phi)                                                 #Do the plot to compare inferred and true phases
+plot(true.phi, adj.phi)                                                 #Do the plot to compare inferred and true phases
 
 ```
 

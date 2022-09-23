@@ -32,7 +32,7 @@ CHIRAL(
 
 \item{u}{u parameter for the prior on the gene means, we suggest to leave the default. It is automatically calculated by the algorithm, can be changed if needed. Default NULL.}
 
-\item{sigma2}{standerd deviation of the data points fro the prediction, we suggest to leave the default. It is automatically calculated by the algorithm, can be changed if needed. default NULL.}
+\item{sigma2}{standard deviation of the data points fro the prediction, we suggest to leave the default. It is automatically calculated by the algorithm, can be changed if needed. default NULL.}
 
 \item{TSM}{Switches the two state model in the EM on and off, default TRUE.}
 
@@ -47,9 +47,9 @@ CHIRAL(
 \item{GTEX_names}{To set to true only if analyzing GTEx data, converts row names from ENSGXXX_GeneName|XX to GeneName. Default FALSE}
 }
 \value{
-A list containing: inferred phases, inferred standard deviation of the data, gene parameters gene weigths (relevant with two state model),
+A list containing: inferred phases in [0,2*pi], inferred standard deviation of the data, gene parameters gene weights (relevant with two state model),
 
-iteration of stop, inferred standard deviation of data of rhythmic genes, the input matrix, history of the Q finction of the EM, genes selected, matrix used for inference.
+iteration of stop, inferred standard deviation of data of rhythmic genes, the input matrix, history of the Q function of the EM, genes selected, matrix used for inference.
 }
 \description{
 Infer the circular phase of gene expression samples
