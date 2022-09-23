@@ -277,6 +277,132 @@ CHIRAL<- function(E, iterations=500, clockgenes=NULL,tau2=NULL, u=NULL,
   return(list(phi=phi,Qhist=Qhist,sigma=sigma2, alpha=alpha, weights=W, iter=i,sigma.m1=sigma2.m1, E=E.full))
 }
 
+#' Calculates the circular correlation according to A Correlation Coefficient for Circular Data N. I. Fisher and A. J. Lee, https://doi.org/10.2307/2335547
+#' The correlation is calculated either between two vectors or between all the columns of a given matrix. Note that cor.c(matrix) != cor.c(t(matrix)).
+#'
+#' @param x Required vector or matrix. Values MUST be in radiants. If x is a matrix do not provide the parameter y.
+#' @param y Vector to be provided only if x is a vector too. Must have same length as x. Default NULL
+#' @return The value of the circular correlation if x and y are vectors.
+#' @return A symmetric matrix of dimensions ncol(x) times ncol(x) with entry i,j equal to the circualr correlation between x[,i] and x[,j]
+#' @examples
+#' cor.c(matrix)
+#' cor.c(vector_x, vector_y)
+
+cor.c<- function(x,y=NULL){
+  if(is.null(y)){return(cor.c.g(x))}
+  if(length(x)!=length(y)){
+    cat("the two vectors have different length")
+    return(NULL)
+  }
+  n=length(x)
+  U1=0
+  U2=0
+  U3=0
+  for(i in 1:(n-1)){
+    for(j in ((i+1):n)){
+      U1=U1+sin(x[i]-x[j])*sin(y[i]-y[j])
+      U2=U2+sin(x[i]-x[j])^2
+      U3=U3+sin(y[i]-y[j])^2
+    }
+  }
+  corr=U1/sqrt(U2*U3)
+  return(corr)
+}
+
+cor.c.g<-function(x){
+  off=ncol(x)
+  cr=matrix(0, ncol=off, nrow=off)
+  dimnames(cr)=list(colnames(x), colnames(x))
+  for(l in 1:off){
+    for(m in l:off){
+      cr[l,m]=cr[m,l]=cor.c(x[,l], x[,m])
+    }
+  }
+  return(cr)
+}
+
+#' Calculates the best possible shift and direction of two phase distributions to minimize the median absolute error (MAD).
+#'
+#' @param phi.0 Required vector of true phases. Values MUST be in radiants and in the interval [0,2*pi]. 
+#' @param phi Required vector of inferred phases. Values MUST be in radiants in the interval [0,2*pi] and matched to phi.0.
+#' @param mode Charcater to decide what the function returns/prints. 
+#' If "say" the MAD is printed at screen and not returned, if "return" MAD is only returned, if "no_median" it nor returned not printed, in all other cases it is both returned and printed. Default "forgotten"
+#' @param N the number of division of the circle where to look for the shift, default 200
+#' @return Either the inferred phases shifted and or flipped such that the MAD is minimized or a list where "phi" are the best pahses and "median" is the value of the MAD
+#' @examples
+#' delta.phi(true.phi, inf.phi, mode="say")
+
+
+delta.phi<-function(phi.0, phi,mode="forgotten", N=200){
+  mad<-12
+  sdel=NULL
+  for(j in 1:N){
+    offset<-j/N*2*pi
+    theta<-(phi-offset)%%(2*pi)
+    
+    del<-abs(theta-phi.0)%%(2*pi)
+    delta<-del
+    for (i in 1:length(phi)) {
+      delta[i]=min(del[i], 2*pi-del[i])
+    }
+    if(median(delta)<mad){
+      mad<-median(delta)
+      bestphi<-theta
+      j_temp=j
+      sdel=delta}
+    
+    phi<-(-phi)%%(2*pi)
+    offset<-phi[j]-phi.0[j]
+    theta<-(phi-offset)%%(2*pi)
+    del<-abs(theta-phi.0)%%(2*pi)
+    delta<-del
+    for (i in 1:length(phi)) {
+      delta[i]=min(del[i], 2*pi-del[i])
+    }
+    if(median(delta)<mad){
+      mad<-median(delta)
+      bestphi<-theta
+      j_temp=-j
+      sdel=delta}
+  }
+  if(mode=="say"){
+    cat("median:", mad*12/pi, "\n")
+    return(bestphi)}
+  else if(mode=="return"){
+    return(list(phi=bestphi, median=mad*12/pi))
+  }
+  else if(mode=="no_median"){
+    return(bestphi)
+  }
+  else{
+    cat("median:", mad*12/pi, "\n")
+    return(list(phi=bestphi, median=(mad*12/pi)))
+  }
+}
+
+#' Changes the inferred phases to obtain visually nicer plots using the fact that the phases live on a circular space where period-a=-a.
+#'
+#' @param realphi Required vector of true phases. 
+#' @param infphi Required vector of inferred phases.
+#' @param period Period of the space where the phases live. Default 2*pi 
+#' @return Set of shifted inferred phases.
+#' @examples
+#' delta.phi(true.phi, inf.phi)
+
+
+adjust.phases<-function(realphi, infphi, period=2*pi){
+  if(abs(period-2*pi)>0.001){return(adjust.phases(realphi*2*pi/period, infphi*2*pi/period)*period/pi/2)}
+  for(i in 1:length(realphi)){
+    if(realphi[i]-infphi[i]>pi){infphi[i]=2*pi-infphi[i]}
+    if(realphi[i]-infphi[i]<(-pi)){infphi[i]=infphi[i]-2*pi}
+  }
+  return(infphi)
+}
+
+
+
+
+
 ### Spin glass approxiamtion to have initial condition for EM ###
 
 Zeta.mf.ordered<-function(J, beta, samples, A.0=0.1){
@@ -325,6 +451,7 @@ Zeta.mf.ordered<-function(J, beta, samples, A.0=0.1){
   return(Zeta)
 }
 
+
 ### Calculation of spin galss interaction matrix ###
 
 J.tilde<-function(E,n.genes=0,n.samples=0){
@@ -342,6 +469,5 @@ J.tilde<-function(E,n.genes=0,n.samples=0){
   colnames(Jtilde)<-colnames(E)
   return(Jtilde)
 }
-
 
 

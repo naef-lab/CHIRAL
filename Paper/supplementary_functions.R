@@ -426,38 +426,6 @@ split_E_age<-function(E, samp){
   return(A)
 }
 
-cor.c<- function(x,y){
-  if(length(x)!=length(y)){
-    cat("the two vectors have different length")
-    return(NULL)
-  }
-  n=length(x)
-  U1=0
-  U2=0
-  U3=0
-  for(i in 1:(n-1)){
-    for(j in ((i+1):n)){
-      U1=U1+sin(x[i]-x[j])*sin(y[i]-y[j])
-      U2=U2+sin(x[i]-x[j])^2
-      U3=U3+sin(y[i]-y[j])^2
-    }
-  }
-  corr=U1/sqrt(U2*U3)
-  return(corr)
-}
-
-cor.c.g<-function(x){
-  off=ncol(x)
-  cr=matrix(0, ncol=off, nrow=off)
-  dimnames(cr)=list(colnames(x), colnames(x))
-  for(l in 1:off){
-    for(m in l:off){
-      cr[l,m]=cr[m,l]=cor.c(x[,l], x[,m])
-    }
-  }
-  return(cr)
-}
-
 svd.from.out<-function(OUT, inter.genes, ENSG=F){
   gene.c=matrix(0, nrow = length(inter.genes),ncol=length(names(OUT)))
   dimnames(gene.c)=list(inter.genes,names(OUT))
@@ -1508,65 +1476,3 @@ which.max.matrix <- function(z) {
   return(cbind(ix, iy))
 }
 
-
-delta.phi<-function(phi.0, phi,mode="forgotten"){
-  mad<-12
-  sdel=NULL
-  for(j in 1:length(phi)){
-    offset<-phi[j]-phi.0[j]
-    theta<-(phi-offset)%%(2*pi)
-    
-    del<-abs(theta-phi.0)%%(2*pi)
-    delta<-del
-    for (i in 1:length(phi)) {
-      delta[i]=min(del[i], 2*pi-del[i])
-    }
-    if(median(delta)<mad){
-      mad<-median(delta)
-      bestphi<-theta
-      j_temp=j
-      sdel=delta}
-    
-    phi<-(-phi)%%(2*pi)
-    offset<-phi[j]-phi.0[j]
-    theta<-(phi-offset)%%(2*pi)
-    del<-abs(theta-phi.0)%%(2*pi)
-    delta<-del
-    for (i in 1:length(phi)) {
-      delta[i]=min(del[i], 2*pi-del[i])
-    }
-    if(median(delta)<mad){
-      mad<-median(delta)
-      bestphi<-theta
-      j_temp=-j
-      sdel=delta}
-  }
-  if(mode=="say"){
-    cat("median:", mad*12/pi, "\n")
-    return(bestphi)}
-  else if(mode=="return"){
-    return(list(phi=bestphi, median=mad*12/pi))
-  }
-  else if(mode=="no_median"){
-    return(bestphi)
-  }
-  else if(mode=="deltas"){
-    return(list(phi=bestphi, median=(mad*12/pi), deltas=sdel))
-  }
-  else{
-    cat("median:", mad*12/pi, "\n")
-    return(list(phi=bestphi, median=(mad*12/pi)))
-  }
-}
-
-
-adjust.phases<-function(realphi, infphi, h24=FALSE){
-  realphi=realphi*12/pi
-  infphi=infphi*12/pi
-  for(i in 1:length(realphi)){
-    if(realphi[i]-infphi[i]>12){infphi[i]=24-infphi[i]}
-    if(realphi[i]-infphi[i]<(-12)){infphi[i]=infphi[i]-24}
-  }
-  if(h24==FALSE){infphi=infphi*pi/12}
-  return(infphi)
-}

@@ -1,0 +1,11 @@
+Package: CHIRAL
+Type: Package
+Title: Infer the circular phase of gene expression samples
+Version: 0.1.0
+Author: Lorenzo Talamanca and Cédric Gobet
+Maintainer: The Naef Lab <felix.naef@epfl.ch>
+Description: Infer the circular phase of gene expression samples
+License: CC BY-NC 
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.2
