@@ -22,6 +22,7 @@ library(lmtest)
 library(reshape2)
 library(grid)
 library(gridExtra)
+library(Chiral)
 
 
 spliti= function(x,sp,nb){

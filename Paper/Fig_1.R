@@ -4,25 +4,25 @@ source("supplementary_functions.R")
 source("CHIRAL.R")
 ####### RUN AFTER from_cpm #######
 
-colroma=vroom("./paper_data/roma.txt",  col_names = FALSE)
+colroma=vroom("./Paper/paper_data/roma.txt",  col_names = FALSE)
 colroma$hex=paste("#", as.hexmode(round(colroma$X1*255,0)),as.hexmode(round(colroma$X2*255,0)),as.hexmode(round(colroma$X3*255,0)), sep="")
-full_col=vroom("./paper_data/GO_full-colorandum.csv", show_col_types = FALSE)
+full_col=vroom("./Paper/paper_data/GO_full-colorandum.csv", show_col_types = FALSE)
 
 as.paper=TRUE
 
 if(as.paper){
-  load("./paper_data/OUT_paper/OUT_all.RData")
-  load("./paper_data/DIPs.RData")
-  colroma=vroom("./paper_data/roma.txt",  col_names = FALSE, show_col_types = FALSE)
+  load("./Paper/paper_data/OUT_paper/OUT_all.RData")
+  load("./Paper/paper_data/DIPs.RData")
+  colroma=vroom("./Paper/paper_data/roma.txt",  col_names = FALSE, show_col_types = FALSE)
 }
 if(!as.paper){
-  load("./data/OUT_all.RData")
-  load("./data/DIPs.RData")
+  load("./Paper/data/OUT_all.RData")
+  load("./Paper/data/DIPs.RData")
 }
 
-dir.create("./Figure1", showWarnings = FALSE)
+dir.create("./Paper/Figure1", showWarnings = FALSE)
 
-pdf(".//Figure1/Fig1_F.pdf", sep="")
+pdf("./Paper//Figure1/Fig1_F.pdf", sep="")
 Plot_density(OUT, phi,cut=0.2, varz="qval")
 dev.off()
 
@@ -40,7 +40,7 @@ qcut=0.2
 Rcut=0.5
 
 {
-  pdf("./Figure1/Fig1_G.pdf")
+  pdf("./Paper/Figure1/Fig1_G.pdf")
   phi.full=NULL
   pho=NULL
   for(name in names(OUT)){
@@ -93,7 +93,7 @@ all=NULL
 tbt=NULL
 #val="pval"
 
-pdf("./Figure1/Fig1_H.pdf")
+pdf("./Paper/Figure1/Fig1_H.pdf")
 for(j in names(OUT)){
   out=OUT[[j]]
   fit=out$data.fit
@@ -178,15 +178,15 @@ dev.off()
 lb=6
 pt=3
 sz=18
-gene_inf=get(load("./paper_data/CGRs.RData"))
-HSF1_genes=get(load("./paper_data/HSF1_g.RData"))
+gene_inf=get(load("./Paper/paper_data/CGRs.RData"))
+HSF1_genes=get(load("./Paper/paper_data/HSF1_g.RData"))
 {
-  Plot_cSVD(OUT, gene_inf, full_col,loc ="./Figure1/Fig1_B" , CT=15, dot_size =pt, label_size = lb, text_size = sz)
-  Plot_cSVD(OUT, HSF1_genes, full_col,loc "./Figure1/Fig1_D" , CT=5, dot_size =pt, label_size = lb, text_size = sz, ymax=0.6)
+  Plot_cSVD(OUT, gene_inf, full_col,loc ="./Paper/Figure1/Fig1_B" , CT=15, dot_size =pt, label_size = lb, text_size = sz)
+  Plot_cSVD(OUT, HSF1_genes, full_col,loc ="./Paper/Figure1/Fig1_D" , CT=5, dot_size =pt, label_size = lb, text_size = sz, ymax=0.6)
 }
 
 {
-  pdf("./Figure1/Fig1_C.pdf")
+  pdf("./Paper/Figure1/Fig1_C.pdf")
   tissuex=c("Brain - Cortex", "Adipose - Visceral (Omentum)")
   geni=gene_inf[c(2,8)]
   Plot_profiles(OUT, tissuex, geni, val="qval")
@@ -194,7 +194,7 @@ HSF1_genes=get(load("./paper_data/HSF1_g.RData"))
 }
 
 {
-  pdf("./Figure1/Fig1_E.pdf")
+  pdf("./Paper/Figure1/Fig1_E.pdf")
   tissuex=c("Brain - Amygdala", "Spleen")
   geni=c("HSPH1", "HSPA1B")
   Plot_profiles(OUT, tissuex, geni, val="qval")

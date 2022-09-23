@@ -130,10 +130,10 @@ CHIRAL<- function(E, iterations=500, clockgenes=NULL,tau2=NULL, u=NULL,
     
     
     Nn=(t(X)%*%X)
-    Nninv<-ginv(Nn)
-    Tinv=ginv(T)
+    Nninv<-solve(Nn)
+    Tinv=solve(T)
     M=Nn+sigma2*Tinv
-    Minv=ginv(M)
+    Minv=solve(M)
     
     
     alpha=Minv%*%t(X)%*%t(E)
@@ -255,7 +255,7 @@ CHIRAL<- function(E, iterations=500, clockgenes=NULL,tau2=NULL, u=NULL,
     X=cbind(one,c,s)
     
     Mold=Nn+sigma2*Tinv
-    Moldinv=ginv(Mold)
+    Moldinv=solve(Mold)
     
     sigma2.m1=sapply(1:Ng, function(s){
       return(sum(diag(S[[s]]-S[[s]]%*%Xold%*%Moldinv%*%t(X)))/Ns+0.01)
