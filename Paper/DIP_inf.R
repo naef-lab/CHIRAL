@@ -52,6 +52,6 @@ OUT=Make_big_OUT(E, phi)
 
 OUT=Fit_OUT(OUT)
 
-save(OUT, file="./Paper/data/OUT/OUT_all.RData")
+save(OUT, file="./Paper/data/OUT/OUT_ALL.RData")
 
 

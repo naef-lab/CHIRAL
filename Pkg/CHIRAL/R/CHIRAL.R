@@ -345,19 +345,11 @@ delta.phi<-function(phi.0, phi,period=2*pi, mode="forgotten", N=200, median_scal
     obj=calc.delta(phi.0, phi, N)
     bestphi=obj$phi
     mad=obj$median*median_scale
-<<<<<<< HEAD
-    
-=======
->>>>>>> 6a6e2a727ce206991092cff92be035aaa27b1af4
   }
   else{
     obj=calc.delta(phi.0/period*2*pi, phi/period*2*pi, N)
     bestphi=obj$phi*period/2/pi
     mad=obj$median*period/2/pi*median_scale
-<<<<<<< HEAD
-    
-=======
->>>>>>> 6a6e2a727ce206991092cff92be035aaa27b1af4
   }
   if(mode=="say"){
     cat("median:", mad, "\n")

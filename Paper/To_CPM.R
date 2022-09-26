@@ -1,4 +1,4 @@
-source("./Paper/supplementary_functions.R")
+source("./supplementary_functions.R")
 
 
 gtex = vroom("/scratch/For_cedric_with_pizza/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads_2.gct")
@@ -27,16 +27,16 @@ for(k in tiss){
 }
 
 
-dir.create(file.path("./Paper/data"), showWarnings = FALSE)
+dir.create(file.path("./data"), showWarnings = FALSE)
 
-dir.create(file.path("./Paper/data/CPM"), showWarnings = FALSE)
+dir.create(file.path("./data/CPM"), showWarnings = FALSE)
 
-save(CPM.all, file = "./Paper/data/CPM/CPM_full.RData")
+save(CPM.all, file = "./data/CPM/CPM_full.RData")
 
 CPM.all.norm=Norm.CPM(CPM.all, high_filter=T, ncores=6)
 
-save(CPM.all.norm,file="./Paper/data/CPM/CPM.all.norm.RData")
+save(CPM.all.norm,file="./data/CPM/CPM.all.norm.RData")
 
 CPM.all.norm_large=Norm.CPM(CPM.all, high_filter=F, ncores=18)
 
-save(CPM.all.norm_large,file="./Paper/data/CPM/CPM.all.norm_large.RData")
+save(CPM.all.norm_large,file="./data/CPM/CPM.all.norm_large.RData")

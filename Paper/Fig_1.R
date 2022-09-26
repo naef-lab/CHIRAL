@@ -11,12 +11,12 @@ full_col=vroom("./Paper/paper_data/GO_full-colorandum.csv", show_col_types = FAL
 as.paper=TRUE
 
 if(as.paper){
-  load("./Paper/paper_data/OUT_paper/OUT_all.RData")
+  load("./Paper/paper_data/OUT_paper/OUT_ALL.RData")
   load("./Paper/paper_data/DIPs.RData")
   colroma=vroom("./Paper/paper_data/roma.txt",  col_names = FALSE, show_col_types = FALSE)
 }
 if(!as.paper){
-  load("./Paper/data/OUT/OUT_all.RData")
+  load("./Paper/data/OUT/OUT_ALL.RData")
   load("./Paper/data/DIPs.RData")
 }
 

@@ -30,13 +30,13 @@ if(!as.paper){
   
   OUT.age=Fit_OUT(OUT.age)
   
-  save(OUT.age, file="./Paper/data/OUT/OUT_age_n5.RData")
+  save(OUT.age, file="./Paper/data/OUT/OUT_AGE.RData")
 }
 
 if(as.paper){
   OUT.MF=get(load("./Paper/paper_data/OUT_paper/OUT_MF.RData"))
-  OUT.age=get(load("./Paper/paper_data/OUT_paper/OUT_age_n5.RData"))
-  OUT.all=get(load("./Paper/paper_data/OUT_paper/OUT_all.RData"))
+  OUT.age=get(load("./Paper/paper_data/OUT_paper/OUT_AGE.RData"))
+  OUT.all=get(load("./Paper/paper_data/OUT_paper/OUT_ALL.RData"))
   dat.raw=get(load("./Paper/paper_data/CPM_full.RData"))
   phi=get(load("./Paper/paper_data/DIPs.RData"))
 }
@@ -84,7 +84,7 @@ for(dv in c("MF", "age_n5")){
     raw.E=raw.E[IRN,colnames(FM)]
     ii=which(rowMeans(raw.E) > 2 & apply(raw.E,1,function(x) length(x[x<0])) <20 )
     FM=FM[ii,]
-    if(dv=="MF") conds=c(rep("MA",NS),rep("FE",NS)) else cond=c(rep("YOUNG",NS),rep("OLD",NS))
+    if(dv=="MF") conds=c(rep("MALE",NS),rep("FEMALE",NS)) else cond=c(rep("YOUNG",NS),rep("OLD",NS))
     dat=nconds(FM,conds=conds,t=FP*12/pi,out.prefix = "./Paper/out_MS/test_MF.pdf")
     colnames(dat)[colnames(dat)=="BICW"]="AICW"
     ss=dat

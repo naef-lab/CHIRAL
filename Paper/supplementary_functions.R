@@ -163,7 +163,7 @@ infer_l=function(k,clockgenes=NULL){
 }
 
 f24_R2_cycling=function(x, t=2*(0:(length(x)-1)), period=24, offset=0, na.lm=5){
-
+  
   kk = which(!is.na(x)==TRUE)
   x = x[kk]
   t = t[kk]
@@ -391,14 +391,14 @@ split_E_sex<-function(E, samp){
     midx=match(males, cn)
     midx=midx[!is.na(midx)]
     if (length(midx)>24){
-    e$E=ee[,midx]
-    A[[paste(i, "Male", sep="-")]]=e
+      e$E=ee[,midx]
+      A[[paste(i, "Male", sep="-")]]=e
     }
     fidx=match(females, cn)
     fidx=fidx[!is.na(fidx)]
     if (length(fidx)>24){
-    e$E=ee[,fidx]
-    A[[paste(i, "Female", sep="-")]]=e
+      e$E=ee[,fidx]
+      A[[paste(i, "Female", sep="-")]]=e
     }
   }
   return(A)
@@ -753,11 +753,11 @@ Plot_profiles<-function(OUT, tissues, geni, plt.hist=FALSE, R.plot=FALSE, val="p
 
 Plot_cSVD<-function(input, genes, full_col=NULL,loc=NULL, ENSG=F, ncomp=NULL, CT=15, ymax=1.5, dot_size=1.5, label_size=3.5, text_size=12, sectors=1, max_ov=Inf){
   if(!is.null(full_col)){
-  full_col=full_col[full_col$Class!="Cells",]
-  dec_names=full_col$`Short name`
-  names(dec_names)=full_col$`Full name`
-  colorandum=full_col$`# color`
-  names(colorandum)=full_col$`Full name`}
+    full_col=full_col[full_col$Class!="Cells",]
+    dec_names=full_col$`Short name`
+    names(dec_names)=full_col$`Full name`
+    colorandum=full_col$`# color`
+    names(colorandum)=full_col$`Full name`}
   if(is.null(full_col)){
     nmtz=names(input)
     if(!is.list(input)) nmtz=colnames(input)
@@ -778,12 +778,12 @@ Plot_cSVD<-function(input, genes, full_col=NULL,loc=NULL, ENSG=F, ncomp=NULL, CT
     for (j in 1:sectors) {
       in_sector=Arg(SVD$u[,i])%%(2*pi)>(j-1)*(2*pi/sectors) &  Arg(SVD$u[,i])%%(2*pi)<j*(2*pi/sectors)
       tempu=Mod(SVD$u[in_sector,i])
-    if(length(tempu)>CT){
-      cuts=tempu[base::order(-tempu)][CT]
-      #labs[which(!(labs %in% gene_inf))]=""
-      smz=Mod(SVD$u[,i])<cuts
-      labs[as.logical(smz*in_sector)]=""
-    }
+      if(length(tempu)>CT){
+        cuts=tempu[base::order(-tempu)][CT]
+        #labs[which(!(labs %in% gene_inf))]=""
+        smz=Mod(SVD$u[,i])<cuts
+        labs[as.logical(smz*in_sector)]=""
+      }
     }
     colz=rownames(SVD$v)
     shepz=rep("all",nrow(SVD$v))
@@ -1128,26 +1128,26 @@ Multitix_radar<-function(OUT, genes, colorandum, tissues=NULL, qcut=0.2){
       colz=names(G)
       shepz="all"
     }
-        pt=tibble(tix=names(G), dist=Mod(G), ang=(Arg(G)%%(2*pi)*12/pi), gene=g, sex=gsub("^.*-","",names(G)),col=colorandum[colz],Category=shepz)
+    pt=tibble(tix=names(G), dist=Mod(G), ang=(Arg(G)%%(2*pi)*12/pi), gene=g, sex=gsub("^.*-","",names(G)),col=colorandum[colz],Category=shepz)
     ptt=rbind(ptt, pt)
   }
   ptt$gene_g=factor(ptt$gene, levels = geni)
   {
     if(length(unique(ptt$Category))==1){
-    g1=ggplot(subset(ptt,gene%in%geni[1:4])) +geom_point(aes(x=ang, y=dist, color=col, shape=Category))+scale_color_identity()+coord_polar(start=0, direction=1)+labs(x="Peak phase", y="Amplitude")+
-      scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+facet_grid(~gene_g)+ylim(0,NA)+ theme_minimal()+ theme(legend.position = "none")
-    g2=ggplot(subset(ptt,gene%in%geni[5:8]))+geom_point(aes(x=ang, y=dist, color=col, shape=Category))+scale_color_identity() +coord_polar(start=0, direction=1)+labs(x="Peak phase", y="Amplitude")+
-      scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+facet_grid(~gene_g)+ ylim(0,NA)+ theme_minimal()+theme(legend.position = "none")
-    g3=ggplot(subset(ptt,gene%in%geni[9:12]))+geom_point(aes(x=ang, y=dist, color=col, shape=Category)) +scale_color_identity()+coord_polar(start=0, direction=1)+labs(x="Peak phase", y="Amplitude")+
-      scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+facet_grid(~gene_g)+ ylim(0,NA)+ theme_minimal()+theme(legend.position = "none")
+      g1=ggplot(subset(ptt,gene%in%geni[1:4])) +geom_point(aes(x=ang, y=dist, color=col, shape=Category))+scale_color_identity()+coord_polar(start=0, direction=1)+labs(x="Peak phase", y="Amplitude")+
+        scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+facet_grid(~gene_g)+ylim(0,NA)+ theme_minimal()+ theme(legend.position = "none")
+      g2=ggplot(subset(ptt,gene%in%geni[5:8]))+geom_point(aes(x=ang, y=dist, color=col, shape=Category))+scale_color_identity() +coord_polar(start=0, direction=1)+labs(x="Peak phase", y="Amplitude")+
+        scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+facet_grid(~gene_g)+ ylim(0,NA)+ theme_minimal()+theme(legend.position = "none")
+      g3=ggplot(subset(ptt,gene%in%geni[9:12]))+geom_point(aes(x=ang, y=dist, color=col, shape=Category)) +scale_color_identity()+coord_polar(start=0, direction=1)+labs(x="Peak phase", y="Amplitude")+
+        scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+facet_grid(~gene_g)+ ylim(0,NA)+ theme_minimal()+theme(legend.position = "none")
     }
     else{
-    g1=ggplot(subset(ptt,gene%in%geni[1:4])) +geom_point(aes(x=ang, y=dist, color=col, shape=Category))+scale_color_identity()+coord_polar(start=0, direction=1)+labs(x="Peak phase", y="Amplitude")+
-      scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+facet_grid(~gene_g)+ylim(0,NA)+ theme_minimal()
-    g2=ggplot(subset(ptt,gene%in%geni[5:8]))+geom_point(aes(x=ang, y=dist, color=col, shape=Category))+scale_color_identity() +coord_polar(start=0, direction=1)+labs(x="Peak phase", y="Amplitude")+
-      scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+facet_grid(~gene_g)+ ylim(0,NA)+ theme_minimal()
-    g3=ggplot(subset(ptt,gene%in%geni[9:12]))+geom_point(aes(x=ang, y=dist, color=col, shape=Category)) +scale_color_identity()+coord_polar(start=0, direction=1)+labs(x="Peak phase", y="Amplitude")+
-      scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+facet_grid(~gene_g)+ ylim(0,NA)+ theme_minimal()
+      g1=ggplot(subset(ptt,gene%in%geni[1:4])) +geom_point(aes(x=ang, y=dist, color=col, shape=Category))+scale_color_identity()+coord_polar(start=0, direction=1)+labs(x="Peak phase", y="Amplitude")+
+        scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+facet_grid(~gene_g)+ylim(0,NA)+ theme_minimal()
+      g2=ggplot(subset(ptt,gene%in%geni[5:8]))+geom_point(aes(x=ang, y=dist, color=col, shape=Category))+scale_color_identity() +coord_polar(start=0, direction=1)+labs(x="Peak phase", y="Amplitude")+
+        scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+facet_grid(~gene_g)+ ylim(0,NA)+ theme_minimal()
+      g3=ggplot(subset(ptt,gene%in%geni[9:12]))+geom_point(aes(x=ang, y=dist, color=col, shape=Category)) +scale_color_identity()+coord_polar(start=0, direction=1)+labs(x="Peak phase", y="Amplitude")+
+        scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+facet_grid(~gene_g)+ ylim(0,NA)+ theme_minimal()
     }
     
     grid.arrange(g1,g2,g3)
