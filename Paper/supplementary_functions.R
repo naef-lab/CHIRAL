@@ -23,7 +23,9 @@ library(reshape2)
 library(grid)
 library(gridExtra)
 library(Chiral)
-
+library(circular)
+library(edgeR)
+library(data.table)
 
 spliti= function(x,sp,nb){
   
@@ -53,7 +55,7 @@ remove_covariates=function(x, samp.all){
   }else{
     tt.norm= NULL
   }
-  tt.norm
+  return(tt.norm)
 }
 
 Norm.CPM<- function(CPM.all, high_filter=T, ncores=18){
@@ -62,7 +64,7 @@ Norm.CPM<- function(CPM.all, high_filter=T, ncores=18){
   samp=samp[,c('SAMPID','SMRIN',"SMTSISCH","SMMAPRT","SMUNMPRT","SMMPPD","SMNABTCH","SMATSSCR","SMTSPAX","SMPTHNTS")]
   
   if (high_filter) samp=subset(samp,SMRIN > 6 & SMMPPD > 40000000 & SMMAPRT > 0.8 &  SMTSISCH > 0 & ((SMATSSCR == 0) | (SMATSSCR == 1) | (SMATSSCR == 2) | (SMATSSCR == 3) | (SMATSSCR == 4)  ))
-  samp=subset(samp,SMRIN > 4)
+  else samp=subset(samp,SMRIN > 4)
   
   samp$subj.id=paste(spliti(samp$SAMPID,"-",1),spliti(samp$SAMPID,"-",2),sep="-")
   samp.all= data.frame(samp,samp.2[match(samp$subj.id,samp.2$SUBJID),])

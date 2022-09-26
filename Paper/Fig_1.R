@@ -16,7 +16,7 @@ if(as.paper){
   colroma=vroom("./Paper/paper_data/roma.txt",  col_names = FALSE, show_col_types = FALSE)
 }
 if(!as.paper){
-  load("./Paper/data/OUT_all.RData")
+  load("./Paper/data/OUT/OUT_all.RData")
   load("./Paper/data/DIPs.RData")
 }
 

@@ -5,34 +5,25 @@ samp$AGE=as.numeric(spliti(samp$AGE,"-",1))+5
 as.paper=TRUE
 
 if(!as.paper){
-  
-  phio=phi=get(load("./Paper/data/DIP.RData"))
-  
-  E=CPM_to_E(CPM.all.norm.large)
-  
-  E=split_E_sex(E, samp)
-  
-  OUT.MF=Make_big_OUT(E, phi)
-  
-  OUT.MF=Fit_OUT(OUT.MF)
-  
-  E=split_E_age(E, samp)
-  
-  OUT.age=Make_big_OUT(E, phi)
-  
-  OUT.age=Fit_OUT(OUT.age)
+  OUT.MF=get(load("./Paper/data/OUT/OUT_MF.RData"))
+  OUT.age=get(load("./Paper/data/OUT/OUT_age_n5.RData"))
+  OUT.all=get(load("./Paper/data/OUT/OUT_all.RData"))
+  SS.age=get(load("./Paper/data/OUT/SS_age_n5.RData"))
+  SS.MF=get(load("./Paper/data/OUT/SS_MF.RData"))
+  phio=phi=get(load("./Paper/data/DIPs.RData"))
 }
 
 if(as.paper){
   OUT.MF=get(load("./Paper/paper_data/OUT_paper/OUT_MF.RData"))
   OUT.age=get(load("./Paper/paper_data/OUT_paper/OUT_age_n5.RData"))
   OUT.all=get(load("./Paper/paper_data/OUT_paper/OUT_all.RData"))
-  phio=phi=get(load("./Paper/paper_data/DIP.RData"))
+  SS.age=get(load("./Paper/paper_data/OUT_paper/SS_age_n5.RData"))
+  SS.MF=get(load("./Paper/paper_data/OUT_paper/SS_MF.RData"))
+  phio=phi=get(load("./Paper/paper_data/DIPs.RData"))
 }
 
 
-SS.age=get(load("./Paper/paper_data/OUT_paper/SS_age_n5.RData"))
-SS.MF=get(load("./Paper/paper_data/OUT_paper/SS_MF.RData"))
+
 
 colroma=vroom("./Paper/paper_data/roma.txt",  col_names = FALSE, show_col_types = FALSE)
 full_col=vroom("./Paper/paper_data/GO_full-colorandum.csv", show_col_types = FALSE)
@@ -270,7 +261,7 @@ for (div in c("MF", "age_n5")) {
   phenot$sex[phenot$SEX==2]="female"
   phenot$age_cat[phenot$AGE>60]="old"
   phenot$age_cat[phenot$AGE<50]="young"
-  phio=ifelse(as.paper,  get(load("./Paper/paper_data/DIP.RData")), get(load("./Paper/data/DIPs.RData")))
+  if(as.paper)phio=  get(load("./Paper/paper_data/DIPs.RData")) else phio=get(load("./Paper/data/DIPs.RData"))
   if(div=="MF"){
     phi.dff=NULL
     for(i in c(1:2)){

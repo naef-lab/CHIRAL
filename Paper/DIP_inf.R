@@ -6,14 +6,21 @@ source("supplementary_functions.R")
 source("CHIRAL.R")
 
 dir.create(file.path("./Paper/data"), showWarnings = FALSE)
-
+dir.create(file.path("./Paper/data/OUT"), showWarnings = FALSE)
 as.paper=TRUE
 
 samp <- fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt')
 samp$sub.id=spliti(samp$SUBJID,"-",2)
 samp$AGE=as.numeric(spliti(samp$AGE,"-",1))+5
-CPM.all.norm.large=get(load("./Paper/paper_data/CPM.all.norm_large.RData"))
-CPM.all.norm=get(load("./Paper/paper_data/CPM.all.norm.RData"))
+if(as.paper){
+  CPM.all.norm.large=get(load("./Paper/paper_data/CPM.all.norm_large.RData"))
+  CPM.all.norm=get(load("./Paper/paper_data/CPM.all.norm.RData"))
+}
+
+if(as.paper){
+  CPM.all.norm.large=get(load("./Paper/paper_data/CPM.all.norm_large.RData"))
+  CPM.all.norm=get(load("./Paper/paper_data/CPM.all.norm.RData"))
+}
 
 E=CPM_to_E(CPM.all.norm)
 
@@ -45,6 +52,6 @@ OUT=Make_big_OUT(E, phi)
 
 OUT=Fit_OUT(OUT)
 
-save(OUT, file="./Paper/data/OUT_all.RData")
+save(OUT, file="./Paper/data/OUT/OUT_all.RData")
 
 
