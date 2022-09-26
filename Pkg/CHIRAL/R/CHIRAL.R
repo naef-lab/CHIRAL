@@ -339,9 +339,18 @@ delta.phi<-function(phi.0, phi,period=2*pi, mode="forgotten", N=200, median_scal
   phi.0=phi.0%%(period)
   phi=phi%%(period)
   isP=abs(period-2*pi)>0.001
-  obj=ifelse(isP,calc.delta(phi.0, phi, N), calc.delta(phi.0/period*2*pi, phi/period*2*pi, N))
-  bestphi=ifelse(isP, obj$bestphi, obj$bestphi*period/2/pi)
-  mad=ifelse(isP, obj$median, obj$median*period/2/pi)*median_scale
+  if(!isP){
+    obj=calc.delta(phi.0, phi, N)
+    bestphi=obj$phi
+    mad=obj$median*median_scale
+    
+  }
+  else{
+    obj=calc.delta(phi.0/period*2*pi, phi/period*2*pi, N)
+    bestphi=obj$phi*period/2/pi
+    mad=obj$median*period/2/pi*median_scale
+    
+  }
   if(mode=="say"){
     cat("median:", mad, "\n")
     return(bestphi)}
@@ -377,7 +386,6 @@ calc.delta<-function(phi.0, phi, N=200){
       sdel=delta}
     
     phi<-(-phi)%%(2*pi)
-    offset<-phi[j]-phi.0[j]
     theta<-(phi-offset)%%(2*pi)
     del<-abs(theta-phi.0)%%(2*pi)
     delta<-del
