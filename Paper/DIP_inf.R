@@ -17,9 +17,9 @@ if(as.paper){
   CPM.all.norm=get(load("./Paper/paper_data/CPM.all.norm.RData"))
 }
 
-if(as.paper){
-  CPM.all.norm.large=get(load("./Paper/paper_data/CPM.all.norm_large.RData"))
-  CPM.all.norm=get(load("./Paper/paper_data/CPM.all.norm.RData"))
+if(!as.paper){
+  CPM.all.norm.large=get(load("./Paper/data/CPM/CPM.all.norm_large.RData"))
+  CPM.all.norm=get(load("./Paper/data/CPM/CPM.all.norm.RData"))
 }
 
 E=CPM_to_E(CPM.all.norm)
