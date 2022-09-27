@@ -22,7 +22,7 @@ library(lmtest)
 library(reshape2)
 library(grid)
 library(gridExtra)
-library(Chiral)
+library(CHIRAL)
 library(circular)
 library(edgeR)
 library(data.table)
@@ -220,13 +220,14 @@ harm_reg<-function(x, t, period){
   c=cos(2*pi*t/period)
   s=sin(2*pi*t/period)
   fit1=lm(x~c+s)
+  mu=coef(fit1)[1]
   a=coef(fit1)[2]
   b=coef(fit1)[3]
   p.val=lrtest(fit1, fit0)$Pr[2]
   amp=2*sqrt(a^2+b^2)
   phase=atan2(b,a)%%(2*pi)
   phase=period*phase/(2*pi)
-  return(c(pval=p.val,phase=phase,amp=amp,a=a,b=b, period=period, R2=summary(fit1)$r.squared))
+  return(c(pval=p.val,phase=phase,amp=amp,mu=mu,a=a,b=b, period=period, R2=summary(fit1)$r.squared))
 }
 
 Fit_OUT<-function(OUT,period=24, NA5=T){
