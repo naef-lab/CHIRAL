@@ -1,22 +1,7 @@
 rm(list=ls())
 gc()
-####### RUN AFTER To_CPM
-#################################################################################################
-#
-# To have the same exact figures as the paper (or to compare with them)                         
-# You need to start from the same DIPs as the infrence is partly stocastic. To do so:
-#
-# Visit https://doi.org/10.5281/zenodo.6637875 and 
-# Download the folder "paper_data". 
-# Copy that folder into the "Paper" folder where this script is
-# Make sure that "./paper_data/DIPs.RData" exists
-# Done
-#
-################################################################################################
-
 
 source("supplementary_functions.R")
-source("CHIRAL.R")
 
 dir.create(file.path("./data"), showWarnings = FALSE)
 dir.create(file.path("./data/OUT"), showWarnings = FALSE)
