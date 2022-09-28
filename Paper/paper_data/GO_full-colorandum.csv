@@ -1,0 +1,49 @@
+Full name,Short name,Class,General color,color hexadecimal,# color
+Adipose - Subcutaneous,Ad. Sub.,Fat,Yellow/Orange,EF7215,#EF7215
+Adipose - Visceral (Omentum),Ad. Visc.,Fat,Yellow/Orange,FD6A02,#FD6A02
+Adrenal Gland,Adrenal,Gland/Nerve,Green,67926A,#67926A
+Artery - Aorta,Ar. Aorta,Artery/Heart,Red/Orange,DF2800,#DF2800
+Artery - Coronary,Ar. Coronary,Artery/Heart,Red/Orange,BF0A30,#BF0A30
+Artery - Tibial,Ar. Tibial,Artery/Heart,Red/Orange,D21F3C,#D21F3C
+Brain - Amygdala,Br. Amyg.,Brain,Yellow,F8DE7E,#F8DE7E
+Brain - Anterior cingulate cortex (BA24),Br. Ant. C. C.,Brain,Yellow,FADA5E,#FADA5E
+Brain - Caudate (basal ganglia),Br. Caudate,Brain,Yellow,FFD300,#FFD300
+Brain - Cerebellar Hemisphere,Br. Cer. Hem.,Brain,Yellow,E9D700,#E9D700
+Brain - Cerebellum,Br. Cere.,Brain,Yellow,FCD12A,#FCD12A
+Brain - Cortex,Br. Cortex,Brain,Yellow,FFC30B,#FFC30B
+Brain - Frontal Cortex (BA9),Br. Fr. Cortex,Brain,Yellow,FCE205,#FCE205
+Brain - Hippocampus,Br. Hippo.,Brain,Yellow,DECD04,#DECD04
+Brain - Hypothalamus,Br. Hypo.,Brain,Yellow,E8E26D,#E8E26D
+Brain - Nucleus accumbens (basal ganglia),Br. Nuc. Acc.,Brain,Yellow,DACA1C,#DACA1C
+Brain - Putamen (basal ganglia),Br. Putamen,Brain,Yellow,F8E473,#F8E473
+Brain - Spinal cord (cervical c-1),Br. Spinal,Brain,Yellow,FEDC56,#FEDC56
+Brain - Substantia nigra,Br. Sub. Nigra,Brain,Yellow,E3D834,#E3D834
+Breast - Mammary Tissue,Breast,Fat,Yellow/Orange,7F1905,#7F1905
+Cells - Cultured fibroblasts,Cells Fib.,Cells,Black,00000A,#00000A
+Cells - EBV-transformed lymphocytes,Cells EBV,Cells,Black,00000A,#00000A
+Colon - Sigmoid,Col. Sigmoid,Metabolic,Acqua,00008A,#00008A
+Colon - Transverse,Col. Tran.,Metabolic,Acqua,008ECC,#008ECC
+Esophagus - Gastroesophageal Junction,Es. G. J.,Metabolic,Blue,1034A6,#1034A6
+Esophagus - Mucosa,Es. Mucosa,Metabolic,Blue,0F52BA,#0F52BA
+Esophagus - Muscularis,Es. Musc.,Metabolic,Blue,111E6C,#111E6C
+Heart - Atrial Appendage,Heart A. A.,Artery/Heart,Red/Orange,FF0800,#FF0800
+Heart - Left Ventricle,Heart L. V.,Artery/Heart,Red/Orange,ED2939,#ED2939
+Kidney - Cortex,Kidney,Metabolic,Acqua,29D3E3,#29D3E3
+Liver,Liver,Metabolic,Acqua,4CEDEA,#4CEDEA
+Lung,Lung,Metabolic,Blue,7EF9FF,#7EF9FF
+Minor Salivary Gland,Salivary,Gland/Nerve,Green,00A572,#00A572
+Muscle - Skeletal,Muscle,Metabolic,Acqua,73C2FB,#73C2FB
+Nerve - Tibial,Nerve Tibial,Gland/Nerve,Green,4CBB17,#4CBB17
+Ovary,Ovary,Sexual,Red/brown,B22222,#B22222
+Pancreas,Pancreas,Metabolic,Acqua,3FE0D0,#3FE0D0
+Pituitary,Pituitary,Gland/Nerve,Green,29AB87,#29AB87
+Prostate,Prostate,Sexual,Red/brown,7C0A02,#7C0A02
+Skin - Not Sun Exposed (Suprapubic),Skin N. S. E.,Skin,Pink,FBAED2,#FBAED2
+Skin - Sun Exposed (Lower leg),Skin S. E.,Skin,Pink,FE7F9C,#FE7F9C
+Small Intestine - Terminal Ileum,Intestine,Metabolic,Acqua,0080FF,#0080FF
+Spleen,Spleen,Metabolic,Acqua,81D8D0,#81D8D0
+Stomach,Stomach,Metabolic,Acqua,6593F5,#6593F5
+Testis,Testis,Sexual,Red/brown,8D021F,#8D021F
+Thyroid,Thyroid,Gland/Nerve,Green,50C878,#50C878
+Uterus,Uterus,Sexual,Red/brown,7E191B,#7E191B
+Vagina,Vagina,Sexual,Red/brown,80000A,#80000A

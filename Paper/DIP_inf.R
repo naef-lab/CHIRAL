@@ -26,8 +26,8 @@ samp <- fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_
 samp$sub.id=spliti(samp$SUBJID,"-",2)
 samp$AGE=as.numeric(spliti(samp$AGE,"-",1))+5
 if(as.paper){
-  CPM.all.norm.large=get(load("./paper_data/CPM.all.norm_large.RData"))
-  CPM.all.norm=get(load("./paper_data/CPM.all.norm.RData"))
+  CPM.all.norm.large=get(load("./paper_data/CPM/CPM.all.norm_large.RData"))
+  CPM.all.norm=get(load("./paper_data/CPM/CPM.all.norm.RData"))
 }
 
 if(!as.paper){

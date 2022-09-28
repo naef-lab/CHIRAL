@@ -1,9 +1,6 @@
 source("/scratch/For_cedric_with_pizza/model_selection/nconds_functions.R")
 source("/scratch/For_cedric_with_pizza/model_selection/nconds.R")
 
-source("/data/shared/FelixProjects/XYmodels/em-useful.R")
-source("/scratch/For_cedric_with_pizza/clean_script/f24_R2_cycling.R")
-
 dir.create(file.path("./Paper/out_MS"), showWarnings = FALSE)
 
 as.paper=TRUE

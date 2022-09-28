@@ -1,7 +1,5 @@
 source("./supplementary_functions.R")
 
-
-gtex = vroom("/scratch/For_cedric_with_pizza/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads_2.gct")
 GTEx = fread("https://storage.googleapis.com/gtex_analysis_v8/rna_seq_data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct.gz")
 gtex=as.data.frame(GTEx)
 names(gtex)=gsub("\\.","-", names(gtex))

@@ -42,11 +42,13 @@ dir.create("./Figure3", showWarnings = FALSE)
 ###################### Cumulative model selection #########################
 
 
-MS=MSS=T
+MS=T
+MSS=T
 sz=20
 th=1
 qcut=0.2
 strict=F
+val="amp_C"
 for (strict in c(FALSE)) {
   for (div in c("MF", "AGE")){
     qcut=2
@@ -57,8 +59,8 @@ for (strict in c(FALSE)) {
     nn=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", nn))))
     OUT=OUT[c(paste(nn,pox[1], sep="-"),paste(nn,pox[2], sep="-"))]
     for(val in c("R")){
-      if(div=="MF") pdf("./Figure2/Fig2_C-F-I.pdf")
-      if(div=="AGE")pdf("./Figure3/Fig3_B-F-I.pdf")
+      if(div=="MF") pdf("./Figure2/Fig2_C-F-I2.pdf")
+      if(div=="AGE")pdf("./Figure3/Fig3_B-F-I2.pdf")
       
       all=NULL
       tbt=NULL
@@ -243,8 +245,8 @@ for (strict in c(FALSE)) {
 
 for (div in c("MF", "AGE")) {
   full_gene_phi=NULL
-  if(div=="MF") pdf("./Figure2/Fig2_B-E-H.pdf")
-  if(div=="AGE")pdf("./Figure3/Fig3_C-E-H.pdf")
+  if(div=="MF") pdf("./Figure2/Fig2_B-E-H2.pdf")
+  if(div=="AGE")pdf("./Figure3/Fig3_C-E-H2.pdf")
   if(div=="MF") OUT= OUT.MF
   if(div=="AGE") OUT= OUT.age
   phenot=get(load("./paper_data/phenotypes.RData"))
@@ -324,7 +326,7 @@ for (div in c("MF", "AGE")) {
       df=out$data.fit
       sg=rownames(ss)[which(ss$model.c %in% mds)]
       if (MS) df=df[sg,]
-      if(!MS) df=df[df$qval<qcut,]
+      if(!MS) {df=subset(df,qval<qcut & amp>Rcut)}
       #df=df[df$qval<qcut,]
       gene_phi=df$phase/12*pi
       if (MSS) {
