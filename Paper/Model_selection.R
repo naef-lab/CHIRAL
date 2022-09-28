@@ -1,5 +1,5 @@
-source("/scratch/For_cedric_with_pizza/model_selection/nconds_functions.R")
-source("/scratch/For_cedric_with_pizza/model_selection/nconds.R")
+source("./nconds_functions.R")
+source("./nconds.R")
 
 dir.create(file.path("./Paper/out_MS"), showWarnings = FALSE)
 
