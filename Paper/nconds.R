@@ -50,7 +50,6 @@ nconds <- function(dat, conds, t,
     save(my_mat, file = paste0(out.prefix, ".matrix_output.Robj"))
   }
   
-  library(parallel)
   fit = parallel::mclapply(split(dat, rownames(dat)),
                  do_all,
                  t=t,
