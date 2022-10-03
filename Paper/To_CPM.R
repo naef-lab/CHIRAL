@@ -4,14 +4,6 @@ library(data.table)
 library(parallel)
 ########
 
-#### General variables ####
-
-your_path="/Users/cgobet/Documents/2022/09_GTEX_revision/CHIRAL/Paper/"
-N.cores = 4 # Number of core to paralellize the different pre-processing functions. Be sure to have enough RAM if you increase the number of cores used.
-setwd(your_path)
-
-########
-
 #### Functions #####
 
 #Filter genes with less than 10 counts on average, normalized by library size (TMM) and log2 transform with 0.25 pseudo-count 
@@ -33,8 +25,11 @@ run_edgeR = function(k){
 Norm.CPM<- function(CPM.all, high_filter=T, ncores=18, samp, samp.2){
     samp=samp[,c('SAMPID','SMRIN',"SMTSISCH","SMMAPRT","SMUNMPRT","SMMPPD","SMNABTCH","SMATSSCR","SMTSPAX","SMPTHNTS")]
   
-  if (high_filter) samp=subset(samp,SMRIN > 6 & SMMPPD > 40000000 & SMMAPRT > 0.8 &  SMTSISCH > 0 & SMATSSCR %in%c(0:4))
-  else samp = subset(samp,SMRIN > 4)
+  if (high_filter){ 
+    samp=subset(samp,SMRIN > 6 & SMMPPD > 40000000 & SMMAPRT > 0.8 &  SMTSISCH > 0 & SMATSSCR %in%c(0:1))
+  }else{ 
+    samp = subset(samp,SMRIN > 4)
+  }
   
   samp$subj.id=paste(spliti(samp$SAMPID,"-",1),spliti(samp$SAMPID,"-",2),sep="-")
   samp.all= data.frame(samp,samp.2[match(samp$subj.id,samp.2$SUBJID),])
@@ -42,19 +37,19 @@ Norm.CPM<- function(CPM.all, high_filter=T, ncores=18, samp, samp.2){
   rownames(samp.all) =samp.all$SAMPID
   samp.all$SMSISH.f= cut(samp.all$SMTSISCH, c(0,200,500,800,2000))
   
-  CPM.all.norm=mclapply(CPM.all,remove_covariates,samp.all,mc.cores = ncores)
+  CPM.all.norm=mclapply(CPM.all, remove_covariates, samp.all, mc.cores = ncores, mc.preschedule = FALSE)
   return(CPM.all.norm)
 }
 
 # Remove covariates using a linear regression with age, sex, ischemic time and death type as covariates
 remove_covariates=function(tt, samp.all){
   
-  tt=subset(tt,rowMeans(tt)>0)
+  tt=subset(tt,rowMeans(tt)>3)
   tt=tt[,names(tt)%in%samp.all$SAMPID]
   tt.info=samp.all[names(tt),]
   tt.norm=tt
   
-  if(ncol(tt)>10){
+  if(ncol(tt)>48 & length(unique(tt.info$DTHHRDY))!=1){
     for(j in 1:nrow(tt)){
       for.fit=data.frame(y=as.numeric(tt[j,]), 
                          isch=tt.info$SMSISH.f, 
@@ -67,6 +62,8 @@ remove_covariates=function(tt, samp.all){
       }else{
         resid=summary(lm(formula = y ~ isch + age + sex + death.type, data = for.fit))$residuals
       }
+      
+      
       tt.norm[j,]=NA
       tt.norm[j,as.numeric(names(resid))]=resid
     }
@@ -81,6 +78,14 @@ spliti= function(x, sp, nb){
   v=sapply(strsplit(x,sp),"[[",nb)
   return(v)
 }
+########
+
+#### General variables ####
+
+your_path="/home/cgobet/CHIRAL/Paper/"
+N.cores = 18 # Number of core to paralellize the different pre-processing functions. Be sure to have enough RAM if you increase the number of cores used.
+setwd(your_path)
+
 ########
 
 ##### Main ####
@@ -102,7 +107,7 @@ tiss=as.list(tiss)
 names(tiss)=tiss
 
 #Filter read count and normalize by library size, log transform, tissue-by-tissue
-CPM.all= mclapply(tiss, run_edgeR, mc.cores = N.cores)
+CPM.all= mclapply(tiss, run_edgeR, mc.cores = N.cores, mc.preschedule = FALSE)
 
 dir.create(file.path("./data"), showWarnings = FALSE)
 dir.create(file.path("./data/CPM"), showWarnings = FALSE)
@@ -117,6 +122,8 @@ meta.2 <- fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTE
 CPM.all.norm=Norm.CPM(CPM.all, high_filter=TRUE, ncores=N.cores, meta.1, meta.2)
 
 save(CPM.all.norm,file="./data/CPM/CPM.all.norm.RData")
+rm(CPM.all.norm)
+gc()
 
 #Filter samples based on RNA quality then remove covariates (bias removal). The fit residuals are used to assess rhythmicity using DIP from above.
 
