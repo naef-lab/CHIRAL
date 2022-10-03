@@ -27,54 +27,7 @@ library(circular)
 library(edgeR)
 library(data.table)
 
-spliti= function(x,sp,nb){
-  
-  v=sapply(strsplit(x,sp),"[[",nb)
-  return(v)
-}
 
-remove_covariates=function(x, samp.all){
-  tt=x
-  tt=subset(tt,rowMeans(tt)>0)
-  tt=tt[,names(tt)%in%samp.all$SAMPID]
-  tt.info=samp.all[names(tt),]
-  tt.norm=tt
-  
-  if(ncol(tt)>10){
-    for(j in 1:nrow(tt)){
-      for.fit=data.frame(y=as.numeric(tt[j,]), isch=tt.info$SMSISH.f, age=tt.info$AGE, sex=as.factor(tt.info$SEX),death.ttype=as.factor(tt.info$DTHHRDY))
-      if(length(unique(for.fit$sex))==1){
-        resid=summary(lm(formula = y ~ isch + age  + death.ttype, data = for.fit))$residuals
-      }else{
-        resid=summary(lm(formula = y ~ isch + age + sex + death.ttype, data = for.fit))$residuals
-      }
-      tt.norm[j,]=NA
-      tt.norm[j,as.numeric(names(resid))]=resid
-    }
-    
-  }else{
-    tt.norm= NULL
-  }
-  return(tt.norm)
-}
-
-Norm.CPM<- function(CPM.all, high_filter=T, ncores=18){
-  samp <- fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt')
-  samp.2 <- fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt')
-  samp=samp[,c('SAMPID','SMRIN',"SMTSISCH","SMMAPRT","SMUNMPRT","SMMPPD","SMNABTCH","SMATSSCR","SMTSPAX","SMPTHNTS")]
-  
-  if (high_filter) samp=subset(samp,SMRIN > 6 & SMMPPD > 40000000 & SMMAPRT > 0.8 &  SMTSISCH > 0 & ((SMATSSCR == 0) | (SMATSSCR == 1) | (SMATSSCR == 2) | (SMATSSCR == 3) | (SMATSSCR == 4)  ))
-  else samp=subset(samp,SMRIN > 4)
-  
-  samp$subj.id=paste(spliti(samp$SAMPID,"-",1),spliti(samp$SAMPID,"-",2),sep="-")
-  samp.all= data.frame(samp,samp.2[match(samp$subj.id,samp.2$SUBJID),])
-  samp.all$SAMPID=gsub('-',"\\.",samp.all$SAMPID)
-  rownames(samp.all) =samp.all$SAMPID
-  samp.all$SMSISH.f= cut(samp.all$SMTSISCH, c(0,200,500,800,2000))
-  
-  CPM.all.norm=mclapply(CPM.all,remove_covariates,samp.all,mc.cores = ncores)
-  return(CPM.all.norm)
-}
 
 CPM_to_E<-function(CPM.all.norm, min.samp=24, sep=NULL, samp=NULL){
   E.matrix=list()
