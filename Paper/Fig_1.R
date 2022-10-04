@@ -2,6 +2,7 @@ rm(list=ls())
 gc()
 source("supplementary_functions.R")
 source("CHIRAL.R")
+
 ####### RUN AFTER from_cpm #######
 
 colroma=vroom("./paper_data/roma.txt",  col_names = FALSE)
@@ -22,7 +23,7 @@ if(!as.paper){
 
 dir.create("./Figure1", showWarnings = FALSE)
 
-pdf(".//Figure1/Fig1_F.pdf", sep="")
+pdf("./Figure1/Fig1_F.pdf", sep="")
 Plot_density(OUT, phi,cut=0.2, varz="qval")
 dev.off()
 
@@ -57,7 +58,6 @@ Rcut=0.5
     phi.df$count=phi.df$phi
     kapp=20
     for(s in 1:length(phi.df$phi)){
-      #if(s<length(phi.df$phi)/2)
       phi.df$count[s]=sum(exp(kapp*cos(phi.df$phi[s]-as.numeric(phi))))
     }
     phi.df$dens=phi.df$count/sum(phi.df$count)/phi.df$phi[2]
@@ -91,13 +91,12 @@ Rcut=0.5
 val="R"
 all=NULL
 tbt=NULL
-#val="pval"
+
 
 pdf("./Figure1/Fig1_H.pdf")
 for(j in names(OUT)){
   out=OUT[[j]]
   fit=out$data.fit
-  #interesting.genes=inter.genes
   inf.phi=out$phi
   exprx=out$E
   gene.list=gsub("\\|.*$","",gsub("^.*_", "",fit$genes))
@@ -115,7 +114,7 @@ for(j in names(OUT)){
     if(val!="R") breaks=breaks^11
     amp.cut = cut(full[,val], breaks, right=FALSE) 
     freq.cut = table(amp.cut) 
-    if(val=="R") freq.cut = rev(freq.cut) #also tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=names(OUT)[j])
+    if(val=="R") freq.cut = rev(freq.cut) 
     cumsum.frq=c(cumsum(freq.cut),nrow(full[,val]))+1
     tbz=tibble(R=breaks[-1], n.genes=cumsum.frq, kind=j)
     if(val=="R") tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=j)
@@ -136,7 +135,6 @@ for(i in nmz){
   for(j in full_col$`Full name`[ct]){
     out=OUT[[j]]
     fit=out$data.fit
-    #interesting.genes=inter.genes
     inf.phi=out$phi
     exprx=out$E
     gene.list=gsub("\\|.*$","",gsub("^.*_", "",fit$genes))
@@ -155,7 +153,7 @@ for(i in nmz){
       if(val!="R") breaks=breaks^11 
       amp.cut = cut(full[,val], breaks, right=FALSE) 
       freq.cut = table(amp.cut) 
-      if(val=="R") freq.cut = rev(freq.cut) #also tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=names(OUT)[j])
+      if(val=="R") freq.cut = rev(freq.cut) 
       cumsum.frq=c(cumsum(freq.cut),nrow(full[,val]))+1
       tbz=tibble(R=breaks[-1], n.genes=cumsum.frq, kind=j)
       if(val=="R") tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=j)

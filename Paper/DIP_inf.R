@@ -256,6 +256,9 @@ Make_big_OUT<-function(E,phi){
 }
 ########
 
+#### Main ####
+
+N.cores = 18 
 dir.create(file.path("./data/OUT"), showWarnings = FALSE)
 as.paper=FALSE
 
@@ -277,8 +280,8 @@ E=CPM_to_E(CPM.all.norm)
 
 gene_inf=get(load("./paper_data/CGRs.RData"))
 
-OUT=mclapply(E, infer_l, gene_inf, mc.cores=16)
-OUT=Fit_OUT(OUT, N.cores=16)
+OUT=mclapply(E, infer_l, gene_inf, mc.cores=N.cores)
+OUT=Fit_OUT(OUT, N.cores=N.cores)
 OUT=Set_OUT(OUT)
 
 donors=Unique_donors(OUT)
@@ -300,8 +303,8 @@ if(as.paper){phi=phi_paper}
 
 OUT=Make_big_OUT(E, phi)
 
-OUT=Fit_OUT(OUT, N.cores=16)
+OUT=Fit_OUT(OUT, N.cores=N.cores)
 
 save(OUT, file="./data/OUT/OUT_ALL.RData")
 
-
+########

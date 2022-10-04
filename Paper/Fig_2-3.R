@@ -23,8 +23,6 @@ if(as.paper){
 }
 
 
-
-
 colroma=vroom("./paper_data/roma.txt",  col_names = FALSE, show_col_types = FALSE)
 full_col=vroom("./paper_data/GO_full-colorandum.csv", show_col_types = FALSE)
 full_col=full_col[full_col$Class!="Cells",]
@@ -49,6 +47,7 @@ th=1
 qcut=0.2
 strict=F
 val="amp_C"
+
 for (strict in c(FALSE)) {
   for (div in c("MF", "AGE")){
     qcut=2
@@ -197,7 +196,7 @@ for (strict in c(FALSE)) {
             else{mds=c(2,4,5)}}
           else{
             if(md %in% c("OLD", "FEMALE")){mds=c(3)}
-            else{mds=c(2)}}        #interesting.genes=inter.genes
+            else{mds=c(2)}}       
           idt=paste("amp_", md, sep="")
           inf.phi=out$phi
           exprx=out$E
@@ -216,7 +215,7 @@ for (strict in c(FALSE)) {
             if(val %in% c("pval","qval")) breaks=breaks^7
             amp.cut = cut(full[,val], breaks, right=FALSE)
             freq.cut = table(amp.cut)
-            if(val %in% c("R", "amp_C")) freq.cut = rev(freq.cut) #also tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=names(OUT)[j])
+            if(val %in% c("R", "amp_C")) freq.cut = rev(freq.cut) 
             cumsum.frq=c(cumsum(freq.cut),nrow(full[,val]))+1
             tbz=tibble(R=breaks[-1], n.genes=cumsum.frq, kind=l)
             if(val%in% c("R", "amp_C")) tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=l)
@@ -268,7 +267,6 @@ for (div in c("MF", "AGE")) {
       phi.df$count=phi.df$phi
       kapp=15
       for(s in 1:length(phi.df$phi)){
-        #if(s<length(phi.df$phi)/2)
         phi.df$count[s]=sum(exp(kapp*cos(phi.df$phi[s]-as.numeric(phi))))
       }
       phi.df$dens=phi.df$count/sum(phi.df$count)/phi.df$phi[2]
@@ -291,7 +289,6 @@ for (div in c("MF", "AGE")) {
       phi.df$count=phi.df$phi
       kapp=20
       for(s in 1:length(phi.df$phi)){
-        #if(s<length(phi.df$phi)/2)
         phi.df$count[s]=sum(exp(kapp*cos(phi.df$phi[s]-as.numeric(phi))))
       }
       phi.df$dens=phi.df$count/sum(phi.df$count)/phi.df$phi[2]
@@ -327,7 +324,6 @@ for (div in c("MF", "AGE")) {
       sg=rownames(ss)[which(ss$model.c %in% mds)]
       if (MS) df=df[sg,]
       if(!MS) {df=subset(df,qval<qcut & amp>Rcut)}
-      #df=df[df$qval<qcut,]
       gene_phi=df$phase/12*pi
       if (MSS) {
         ssg=ss[sg,]
@@ -340,7 +336,6 @@ for (div in c("MF", "AGE")) {
       phi.df$count=phi.df$phi
       kapp=20
       for(s in 1:length(phi.df$phi)){
-        #if(s<length(phi.df$phi)/2)
         phi.df$count[s]=sum(exp(kapp*cos(phi.df$phi[s]-as.numeric(phi))))
       }
       phi.df$dens=phi.df$count/sum(phi.df$count)/phi.df$phi[2]
@@ -353,7 +348,6 @@ for (div in c("MF", "AGE")) {
       phi.df$count=phi.df$phi
       kapp=20
       for(s in 1:length(phi.df$phi)){
-        #if(s<length(phi.df$phi)/2)
         phi.df$count[s]=sum(exp(kapp*cos(phi.df$phi[s]-as.numeric(gene_phi))))
       }
       phi.df$dens=phi.df$count/sum(phi.df$count)/phi.df$phi[2]
@@ -380,7 +374,6 @@ for (div in c("MF", "AGE")) {
       phi.df$count=phi.df$phi
       kapp=20
       for(s in 1:length(phi.df$phi)){
-        #if(s<length(phi.df$phi)/2)
         phi.df$count[s]=sum(exp(kapp*cos(phi.df$phi[s]-as.numeric(phi))))
       }
       phi.df$dens=phi.df$count/sum(phi.df$count)/phi.df$phi[2]
@@ -394,7 +387,6 @@ for (div in c("MF", "AGE")) {
       phi.df$count=phi.df$phi
       kapp=20
       for(s in 1:length(phi.df$phi)){
-        #if(s<length(phi.df$phi)/2)
         phi.df$count[s]=sum(exp(kapp*cos(phi.df$phi[s]-as.numeric(gene_phi$genes))))
       }
       phi.df$dens=phi.df$count/sum(phi.df$count)/phi.df$phi[2]
@@ -419,7 +411,6 @@ for (div in c("MF", "AGE")) {
       phi.df$count=phi.df$phi
       kapp=20
       for(s in 1:length(phi.df$phi)){
-        #if(s<length(phi.df$phi)/2)
         phi.df$count[s]=sum(exp(kapp*cos(phi.df$phi[s]-as.numeric(phi))))
       }
       phi.df$dens=phi.df$count/sum(phi.df$count)/phi.df$phi[2]
@@ -433,7 +424,6 @@ for (div in c("MF", "AGE")) {
       phi.df$count=phi.df$phi
       kapp=20
       for(s in 1:length(phi.df$phi)){
-        #if(s<length(phi.df$phi)/2)
         phi.df$count[s]=sum(exp(kapp*cos(phi.df$phi[s]-as.numeric(gene_phi$genes))))
       }
       phi.df$dens=phi.df$count/sum(phi.df$count)/phi.df$phi[2]

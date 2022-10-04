@@ -1,15 +1,72 @@
 source("./nconds_functions.R")
 source("./nconds.R")
 
+#### Functions ####
+
+split_E_sex<-function(E, samp){
+  males=samp$sub.id[samp$SEX==1]
+  females=samp$sub.id[samp$SEX==2]
+  A=list()
+  for(i in names(E)){
+    e=E[[i]]
+    ee=e$E
+    cn=colnames(ee)
+    cn=gsub("\\..*$","", gsub("GTEX.","", cn))
+    midx=match(males, cn)
+    midx=midx[!is.na(midx)]
+    if (length(midx)>24){
+      e$E=ee[,midx]
+      A[[paste(i, "Male", sep="-")]]=e
+    }
+    fidx=match(females, cn)
+    fidx=fidx[!is.na(fidx)]
+    if (length(fidx)>24){
+      e$E=ee[,fidx]
+      A[[paste(i, "Female", sep="-")]]=e
+    }
+  }
+  return(A)
+}
+
+split_E_age<-function(E, samp){
+  males=samp$sub.id[samp$AGE>60]
+  females=samp$sub.id[samp$AGE<50]
+  A=list()
+  for(i in names(E)){
+    e=E[[i]]
+    ee=e$E
+    cn=colnames(ee)
+    cn=gsub("\\..*$","", gsub("GTEX.","", cn))
+    midx=match(males, cn)
+    midx=midx[!is.na(midx)]
+    if (length(midx)>24){
+      e$E=ee[,midx]
+      A[[paste(i, "Male", sep="-")]]=e
+    }
+    fidx=match(females, cn)
+    fidx=fidx[!is.na(fidx)]
+    if (length(fidx)>24){
+      e$E=ee[,fidx]
+      A[[paste(i, "Female", sep="-")]]=e
+    }  }
+  return(A)
+}
+
+
+########
+
+#### Main ####
+N.cores = 18
+
 dir.create(file.path("./Paper/out_MS"), showWarnings = FALSE)
 
-as.paper=TRUE
+as.paper=FALSE
 
 if(!as.paper){
   
-  phio=phi=get(load("./Paper/data/DIPs.RData"))
+  phio=phi=get(load("./data/DIPs.RData"))
   
-  dat.raw=get(load("./Paper/data/CPM_full.RData"))
+  dat.raw=get(load("./data/CPM/CPM_full.RData"))
   
   E=CPM_to_E(CPM.all.norm.large)
   
@@ -17,28 +74,28 @@ if(!as.paper){
   
   OUT.MF=Make_big_OUT(E, phi)
   
-  OUT.MF=Fit_OUT(OUT.MF)
+  OUT.MF=Fit_OUT(OUT.MF, N.cores = N.cores)
   
-  save(OUT.MF, file="./Paper/data/OUT/OUT_MF.RData")
+  save(OUT.MF, file="./data/OUT/OUT_MF.RData")
   
   E=split_E_age(E, samp)
   
   OUT.age=Make_big_OUT(E, phi)
   
-  OUT.age=Fit_OUT(OUT.age)
+  OUT.age=Fit_OUT(OUT.age, N.cores = N.cores)
   
-  save(OUT.age, file="./Paper/data/OUT/OUT_AGE.RData")
+  save(OUT.age, file="./data/OUT/OUT_AGE.RData")
 }
 
 if(as.paper){
-  OUT.MF=get(load("./Paper/paper_data/OUT_paper/OUT_MF.RData"))
-  OUT.age=get(load("./Paper/paper_data/OUT_paper/OUT_AGE.RData"))
-  OUT.all=get(load("./Paper/paper_data/OUT_paper/OUT_ALL.RData"))
-  dat.raw=get(load("./Paper/paper_data/CPM_full.RData"))
-  phi=get(load("./Paper/paper_data/DIPs.RData"))
+  OUT.MF=get(load("./paper_data/OUT_paper/OUT_MF.RData"))
+  OUT.age=get(load("./paper_data/OUT_paper/OUT_AGE.RData"))
+  OUT.all=get(load("./paper_data/OUT_paper/OUT_ALL.RData"))
+  dat.raw=get(load("./paper_data/CPM_full.RData"))
+  phi=get(load("./paper_data/DIPs.RData"))
 }
 
-Meta=read.table("./Paper/paper_data/sample_metadata.txt", header=TRUE)
+Meta=read.table("./paper_data/sample_metadata.txt", header=TRUE)
 
 
 qcut=0.2
@@ -72,7 +129,6 @@ for(dv in c("MF", "age_n5")){
     P2=OUT[[nm2]]$phi
     S1=match(intersect(MT$fullID, colnames(T1)), colnames(T1))
     S2=match(intersect(MT$fullID, colnames(T2)), colnames(T2))
-    #CG=intersect(rownames(T1), rownames(T2))
     NS=length(S1)
     IRN=intersect(rownames(T1),rownames(T2))
     FM=cbind(T1[IRN,S1], T2[IRN,S2])
@@ -82,7 +138,7 @@ for(dv in c("MF", "age_n5")){
     ii=which(rowMeans(raw.E) > 2 & apply(raw.E,1,function(x) length(x[x<0])) <20 )
     FM=FM[ii,]
     if(dv=="MF") conds=c(rep("MALE",NS),rep("FEMALE",NS)) else cond=c(rep("YOUNG",NS),rep("OLD",NS))
-    dat=nconds(FM,conds=conds,t=FP*12/pi,out.prefix = "./Paper/out_MS/test_MF.pdf")
+    dat=nconds(FM,conds=conds,t=FP*12/pi, out.prefix = NULL)
     colnames(dat)[colnames(dat)=="BICW"]="AICW"
     ss=dat
     gn=NULL
@@ -117,6 +173,6 @@ for(dv in c("MF", "age_n5")){
     ss=ss[,-(ncol(ss)-1)]
     SS[[tx]]=ss
   }
-  save(SS, file=paste("./Paper/data/OUT/SS_", dv, ".RData", sep=""))
+  save(SS, file=paste("./data/OUT/SS_", dv, ".RData", sep=""))
 }
 
