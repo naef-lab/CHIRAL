@@ -1,5 +1,9 @@
 rm(list=ls())
-
+#### Libraries ####
+library(CHIRAL)
+library(lmtest)
+library(ggplot2)
+#####
  
 ##### Functions ####
 spliti= function(x, sp, nb){

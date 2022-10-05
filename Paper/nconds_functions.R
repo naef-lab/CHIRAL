@@ -162,22 +162,21 @@ compute_RSS = function(x, matX,kk){
   list(param=y,RSS = RSS)
 }
 #############################################
-compute_BIC = function(A,n){
+compute_AIC = function(A,n){
   
   p = length(A$param)
-  BIC= n * log(A$RSS/n) + 2*p
-  #AIC = n * log(A$RSS/n, base = exp(1)) + 2* p + 2*p*(p +1) /(n-p-1)
-  #BIC=  n * log(A$RSS/n, base = exp(1))  + log(n, base = exp(1)) * p
-  list(BIC = BIC, param = A$param)
+  AIC= n * log(A$RSS/n) + 2*p
+
+  list(AIC = AIC, param = A$param)
   
 } 
 ###############################################
-extract_minBIC = function(x){
+extract_minAIC = function(x){
   ex = sapply(x, "[[", 1)
   pos = which.min(ex)
   
   A_w = 1/sum(exp((ex[pos]-ex)/2))
-  c(model=pos,x[[pos]],BICW=A_w)
+  c(model=pos,x[[pos]],AICW=A_w)
 }
 ###############################################
 compute_param = function(bf,n.co,period,conds){
@@ -201,8 +200,8 @@ compute_param = function(bf,n.co,period,conds){
     relamp=0.5*amp/u
     paramout[(1:4 + 4*(i-1))] = c(u,amp,relamp,phase)
   }
-  paramout=c(bf$model,bf$BICW,paramout)
-  names(paramout) = c('model','BICW',paste(c('mean','amp','relamp','phase'),rep(unique(conds),each =4), sep = "_"))
+  paramout=c(bf$model,bf$AICW,paramout)
+  names(paramout) = c('model','AICW',paste(c('mean','amp','relamp','phase'),rep(unique(conds),each =4), sep = "_"))
   paramout
 }
 #################################################################################
@@ -309,9 +308,9 @@ do_all = function(x,t,n.co,period,my_mat,conds){
   n = length(x)
   
   my_fit = lapply(my_mat,compute_RSS, x = x,kk)
-  my_BIC =lapply(my_fit,compute_BIC,n=n)
+  my_AIC =lapply(my_fit,compute_AIC,n=n)
   
-  bestfit = extract_minBIC(my_BIC)
+  bestfit = extract_minAIC(my_AIC)
   
   OUT = compute_param(bestfit,n.co,period,conds)
   OUT

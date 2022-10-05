@@ -27,8 +27,10 @@ Norm.CPM<- function(CPM.all, high_filter=T, ncores=18, samp, samp.2){
   
   if (high_filter){ 
     samp=subset(samp,SMRIN > 6 & SMMPPD > 40000000 & SMMAPRT > 0.8 &  SMTSISCH > 0 & SMATSSCR %in%c(0:1))
+    mean.thresh=3
   }else{ 
     samp = subset(samp,SMRIN > 4)
+    mean.thresh=0
   }
   
   samp$subj.id=paste(spliti(samp$SAMPID,"-",1),spliti(samp$SAMPID,"-",2),sep="-")
@@ -37,14 +39,14 @@ Norm.CPM<- function(CPM.all, high_filter=T, ncores=18, samp, samp.2){
   rownames(samp.all) =samp.all$SAMPID
   samp.all$SMSISH.f= cut(samp.all$SMTSISCH, c(0,200,500,800,2000))
   
-  CPM.all.norm=mclapply(CPM.all, remove_covariates, samp.all, mc.cores = ncores, mc.preschedule = FALSE)
+  CPM.all.norm=mclapply(CPM.all, remove_covariates, samp.all, mean.thresh, mc.cores = ncores, mc.preschedule = TRUE)
   return(CPM.all.norm)
 }
 
 # Remove covariates using a linear regression with age, sex, ischemic time and death type as covariates
-remove_covariates=function(tt, samp.all){
+remove_covariates=function(tt, samp.all, mean.thresh){
   
-  tt=subset(tt,rowMeans(tt)>3)
+  tt=subset(tt,rowMeans(tt)>mean.thresh)
   tt=tt[,names(tt)%in%samp.all$SAMPID]
   tt.info=samp.all[names(tt),]
   tt.norm=tt
@@ -91,12 +93,17 @@ setwd(your_path)
 ##### Main ####
 
 #Read raw rna-seq count data from the GTEX database
-gtex = fread("https://storage.googleapis.com/gtex_analysis_v8/rna_seq_data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct.gz")
+if(!file.exists(file="./paper_data/raw/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct")){ 
+  gtex = fread("https://storage.googleapis.com/gtex_analysis_v8/rna_seq_data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct.gz")
+}else{
+  gtex = fread("./paper_data/raw/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct")
+}
+
 gtex=as.data.frame(gtex)
 names(gtex)=gsub("\\.","-", names(gtex))
 
 #Read metadata from the GTEX database
-samp <- fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt')
+samp = fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt')
 
 #get sample position for each tissue
 gtex.tissue=samp[match(colnames(gtex),samp$SAMPID),'SMTSD']
@@ -107,7 +114,7 @@ tiss=as.list(tiss)
 names(tiss)=tiss
 
 #Filter read count and normalize by library size, log transform, tissue-by-tissue
-CPM.all= mclapply(tiss, run_edgeR, mc.cores = N.cores, mc.preschedule = FALSE)
+CPM.all= mclapply(tiss, run_edgeR, mc.cores = N.cores)
 
 dir.create(file.path("./data"), showWarnings = FALSE)
 dir.create(file.path("./data/CPM"), showWarnings = FALSE)
@@ -116,7 +123,7 @@ save(CPM.all, file = "./data/CPM/CPM_full.RData")
 
 #Filter samples based on RNA quality, sequencing depth, mapping quality and then remove covariates (bias removal). 
 # The fit residuals are used to infer TIP and DIP.
-meta.1 <- fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt')
+meta.1 = samp
 meta.2 <- fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt')
 
 CPM.all.norm=Norm.CPM(CPM.all, high_filter=TRUE, ncores=N.cores, meta.1, meta.2)
@@ -132,3 +139,6 @@ CPM.all.norm_large=Norm.CPM(CPM.all, high_filter=FALSE, ncores=N.cores, meta.1, 
 save(CPM.all.norm_large,file="./data/CPM/CPM.all.norm_large.RData")
 
 ########
+
+
+

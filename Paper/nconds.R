@@ -32,7 +32,7 @@ NULL
 nconds <- function(dat, conds, t, 
                    period = 24, 
                    out.prefix = 'nconds_output', 
-                   write.intermediates = TRUE){
+                   write.intermediates = TRUE, N.cores=1){
                    
   if (missing(conds) & missing(t)){
     nam.split <- strsplit(names(dat),"_")
@@ -49,15 +49,15 @@ nconds <- function(dat, conds, t,
   if (write.intermediates){
     save(my_mat, file = paste0(out.prefix, ".matrix_output.Robj"))
   }
-  
-  fit = parallel::mclapply(split(dat, rownames(dat)),
+  dat.2=split(dat, rownames(dat))
+  fit = parallel::mclapply(dat.2,
                  do_all,
                  t=t,
                  n.co=n.co,
                  period=period,
                  my_mat=my_mat,
                  conds=conds,
-                 mc.cores=1)
+                 mc.cores=N.cores, mc.preschedule = TRUE)
   if (write.intermediates){
     save(fit, file = paste0(out.prefix, ".fit_output.Robj"))
   }

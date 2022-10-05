@@ -14,7 +14,7 @@ library(foreach)
 library(tidyr)
 library(vroom)
 library(data.table)
-library(reshape2)# data table and this fight, maybe we can not load this
+library(reshape2)
 library(gplots)
 #library(ggforce)
 library(ggstar)
@@ -44,9 +44,6 @@ CPM_to_E<-function(CPM.all.norm, min.samp=24, sep=NULL, samp=NULL){
         if(!is.null(E$E)){
           E$tissue=name
           ml=fm=list()
-          #gene="PER3"
-          #E$E=as.matrix(subset(E$E,rowMeans(E$E)>0))
-          #cat(name, " ", dim(E$E), gene, "is present", any(gsub("^.*_", "",rownames(E$E))==gene),  "\n")
           colnames(E$E)=spliti(colnames(E$E), "\\.", 2)
           ml$E=E$E[,colnames(E$E) %in% male]
           ml$type="GTEX-male"
@@ -69,9 +66,6 @@ CPM_to_E<-function(CPM.all.norm, min.samp=24, sep=NULL, samp=NULL){
         if(!is.null(E$E)){
           E$tissue=name
           ml=fm=list()
-          #gene="PER3"
-          #E$E=as.matrix(subset(E$E,rowMeans(E$E)>0))
-          #cat(name, " ", dim(E$E), gene, "is present", any(gsub("^.*_", "",rownames(E$E))==gene),  "\n")
           ml$E=E$E[,colnames(E$E) %in% young]
           ml$type="GTEX-old"
           ml$tissue=name
@@ -93,8 +87,6 @@ CPM_to_E<-function(CPM.all.norm, min.samp=24, sep=NULL, samp=NULL){
         if(ncol(E$E)>min.samp){
           E$tissue=name
           gene="PER3"
-          #E$E=as.matrix(subset(E$E,rowMeans(E$E)>0))
-          #cat(name, " ", dim(E$E), gene, "is present", any(gsub("^.*_", "",rownames(E$E))==gene),  "\n")
           E.matrix[[name]]=E}
       }
     }
@@ -193,7 +185,6 @@ Fit_OUT<-function(OUT,period=24, NA5=T){
       OUT[[i]]=NULL
       next
     }
-    #dat.fit=as.data.frame(t(apply(E,1,f24_R2_cycling,t=24*as.numeric(phase)/(2*pi))))
     dat.fit=as.data.frame(t(apply(E, 1, harm_reg, 12*as.numeric(phase)/pi, period=period)))
     dat.fit$qval=p.adjust(dat.fit$pval, "BH")
     OUT[[i]]$data.fit=data.frame(dat.fit,E,genes=rownames(E))
@@ -206,7 +197,7 @@ Fit_OUT<-function(OUT,period=24, NA5=T){
 
 order.from.hc.ref<-function(x){
   sx=x
-  #hard coded refernce
+  #hard coded reference
   full.ref=c(-0.43043911+0.02646768i, -0.21520829-0.08481562i, -0.18976262-0.06323798i, -0.26402067+0.03233651i, 
              -0.15460540-0.17813898i,  0.34503079+0.12988785i,  0.39656252+0.03842312i, -0.30343360+0.29074942i,  0.06226694-0.12542420i, -0.06159846-0.04409744i, -0.18018038-0.01939843i)
   names(full.ref)=c("DBP"   ,  "PER3"  ,  "TEF"   ,  "NR1D2"  ,   "PER2"  ,  "NPAS2" ,  "ARNTL" ,  "NR1D1"  , "CRY1"  ,  "CRY2",  "PER1")
@@ -305,13 +296,9 @@ Phi.from.phi_mat<-function(phi.study, return.all=TRUE, min.tix=1, ct=1.95){
   score=Mod(phit)
   phit=phis
   if(return.all)  return(Arg(phit)%%(2*pi))
-  sum(is.na(phit))
   good.s=names(phit[score>0.25])
-  length(good.s)
   phi.fin=phi_mat[good.s,]
   samp.tix=nrow(phi.fin)-colSums(is.na(phi.fin))
-  #hist(samp.tix)
-  sum(samp.tix>100)
   phi=Arg(phit[good.s])%%(2*pi)
   return(phi)
 }
@@ -388,7 +375,6 @@ svd.from.out<-function(OUT, inter.genes, ENSG=F){
   gtot=NULL
   for(i in names(OUT)){ 
     out=OUT[[i]]
-    #out=order.out.setgene(out, gene=lock.gene)
     fit=out$data.fit
     gene.list=gsub("\\|.*$","",gsub("^.*_", "",fit$genes))
     if(ENSG){
@@ -409,24 +395,18 @@ svd.from.out<-function(OUT, inter.genes, ENSG=F){
     B=A
     A=complex(real = A[,"a"], imaginary =  A[,"b"])
     names(A)=rownames(B)
-    #A=order.from.ref(A)
-    #nr=rep(-Conj(A["PER3"])/sqrt(A["PER3"]*Conj(A["PER3"])),length(A))
-    #A=A*nr
     gene.c[,i]=A[inter.genes]
   }
   gene.c[is.na(gene.c)]=0
   if(ncol(gene.c)*nrow(gene.c)==0){return(NULL)}
   SVD=svd(gene.c)
-  # if(!is.null(lock.gene)&&!is.na(match(lock.gene,inter.genes))){
-  #   i=lock.gene
+
   for(k in 1:length(SVD$d)){
-    #rot=Conj(SVD$u[which(rownames(gene.c)==i),k])/Mod(SVD$u[which(rownames(gene.c)==i),k])
     mn=sum(SVD$v[,k])
     rot=Conj(mn)/Mod(mn)
     SVD$u[,k]=SVD$u[,k]*rot*max(Mod(SVD$v[,k]))*SVD$d[k]
     SVD$v[,k]=Conj(SVD$v[,k]*rot/max(Mod(SVD$v[,k])))
   }
-  #}
   rownames(SVD$u)=rownames(gene.c)
   if(ENSG){
     gtot=unique(gtot)
@@ -477,7 +457,6 @@ create.gene.matrix<-function(OUT, norm=F){
   gene.traduction=tibble(ens=character(), symbol=character(), full=character())
   for(i in names(OUT)){ 
     out=OUT[[i]]
-    #out=order.out.setgene(out, gene=lock.gene)
     fit=out$data.fit
     gene.tr.temp=tibble(ens=gsub("\\..*$","",gsub("_.*$", "",fit$genes)), symbol=gsub("\\|.*$","",gsub("^.*_", "",fit$genes)),full=fit$genes)
     gene.traduction=rbind(gene.traduction,gene.tr.temp)
@@ -494,8 +473,7 @@ create.gene.matrix<-function(OUT, norm=F){
     clock.coord=clock.coord[!is.na(clock.coord)]
     fit=fit[clock.coord,]
     fit=fit[!is.na(fit[,"amp"]),]
-    #dats=as.matrix(dats[clock.coord,])
-    #vars=apply(dats, 1, var)
+  
     if(nrow(fit)>0){
       if(norm){A=complex(modulus = fit[,"R2"], argument = (fit[,"phase"]*pi/12))}
       else{A=complex(real = fit[,"a"], imaginary =  fit[,"b"])}
@@ -512,12 +490,10 @@ Plot_density<-function(OUT, phi, R.plot=FALSE, R.df=FALSE,cut=0.1, varz="pval", 
   phi.df$count=phi.df$phi
   kapp=20
   for(s in 1:length(phi.df$phi)){
-    #if(s<length(phi.df$phi)/2)
     phi.df$count[s]=sum(exp(kapp*cos(phi.df$phi[s]-as.numeric(phi))))
   }
   phi.df$dens=phi.df$count/sum(phi.df$count)/phi.df$phi[2] #normalize in the linear sense
   phi.df$dens=phi.df$count/sqrt(sum(phi.df$count^2)*phi.df$phi[2]/2)#to romalize the radar plot integral to one
-  #ggplot(phi.df)+geom_line(aes(x=hour,y=dens), colour="darkblue")+coord_polar()+scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+ylim(0,NA)+theme_minimal()+labs(x="time of day", y="density", title="Donor circadian phase")
   phi.df$kind="donors"
   s.phi.df=phi.df
   pho=NULL
@@ -529,13 +505,12 @@ Plot_density<-function(OUT, phi, R.plot=FALSE, R.df=FALSE,cut=0.1, varz="pval", 
     else if(comp=="small") {phi=out$data.fit[which(out$data.fit[,varz]<cut), "phase"]*pi/12
     compet="smaller than"
     }
-    else { cat("comp variable can be set ti either big or small")
+    else { cat("comp variable can be set to either big or small")
       stop()
     }
     pho=c(pho,phi)
   }
   for(s in 1:length(phi.df$phi)){
-    #if(s<length(phi.df$phi)/2)
     phi.df$count[s]=sum(exp(kapp*cos(phi.df$phi[s]-as.numeric(pho))))
   }
   phi.df$dens=phi.df$count/sum(phi.df$count)/phi.df$phi[2] #normalize in the linear sense

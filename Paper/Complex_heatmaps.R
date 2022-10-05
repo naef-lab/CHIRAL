@@ -15,8 +15,9 @@ library(RCy3)
 
 ################################################
 
+
 ################ Source external functions #####
-setwd("/Users/cgobet/Documents/2022/09_GTEX_revision/CHIRAL/Paper/")
+setwd("/home/cgobet/CHIRAL/Paper/")
 source("ridgeInR.R")
 source("nconds_functions.R")
 source("nconds.R")
@@ -81,9 +82,9 @@ harm_reg=function(x, t, period)
 
 generate_comp_heatmap=function(tiss.2, dat, dat.c1, dat.c2, subsampling, mo, output_path, cytoscape = FALSE){
   #tiss.2 = tissue
-  #dat = the full tissue dataset (OUT files from model_selection.R (./Paper/paper_data/OUT_paper/OUT_MF.RData or ./Paper/paper_data/OUT_paper/OUT_MF.RData))
-  #dat.c1 = subsampled tissue data and model selection for MALE or YOUNG (from ./Paper/paper_data/OUT_paper/OUT_paper/SS_AGE.RData or ./Paper/paper_data/OUT_paper/SS_MF.RData)
-  #dat.c2 = subsampled tissue data and model selection for FEMALE or OLD (from ./Paper/paper_data/OUT_paper/SS_AGE.RData or ./Paper/paper_data/OUT_paper/SS_MF.RData)
+  #dat = the full tissue dataset (OUT files from model_selection.R (./paper_data/OUT_paper/OUT_MF.RData or ./data/OUT/OUT_MF.RData))
+  #dat.c1 = subsampled tissue data and model selection for MALE or YOUNG (from ./paper_data/OUT_paper/OUT_paper/SS_AGE.RData or ./data/OUT/SS_MF.RData)
+  #dat.c2 = subsampled tissue data and model selection for FEMALE or OLD (from ./paper_data/OUT_paper/SS_AGE.RData or ./data/OUT/SS_MF.RData)
   #subsampling = MF or AGE
   #mo = rhythmicity model (1-5)
   #output_path = path to save the heatmaps pdfs
@@ -294,9 +295,9 @@ generate_comp_heatmap=function(tiss.2, dat, dat.c1, dat.c2, subsampling, mo, out
     TF.ana.hat=TF.ana$Ahat
     
     TF.model=nconds(TF.ana.hat,conds=c(rep(c.1,ncol(dat.c1.all)),rep(c.2,ncol(dat.c2.all))),t=c(time.c1.all, time.c2.all),
-                    out.prefix = NULL)
+                    out.prefix = NULL, N.cores = N.cores)
     
-    TF.model.sub=subset(TF.model,model== mo &  BICW > 0.5)
+    TF.model.sub=subset(TF.model,model== mo &  AICW > 0.5)
     TF.model.sub$zscore=TF.ana$combined.Zscore[rownames(TF.model.sub)]
     
     top.TF=unique(c(rownames(TF.model.sub[order(-TF.model.sub$zscore)[1:10],]),
@@ -412,22 +413,32 @@ generate_comp_heatmap=function(tiss.2, dat, dat.c1, dat.c2, subsampling, mo, out
 
 ####### Run the heatmaps for every model in AGE or MF condition
 
-dv='AGE' # or 'AGE'
+dv='MF' # or 'AGE'
 output_path="./plot/complex_heatmaps/"
+N.cores = 18 
+dir.create(output_path, showWarnings = FALSE,recursive = TRUE)
+as.paper=FALSE
 
-if(dv =='MF'){
-  dat.ss=get(load("./paper_data/OUT_paper/SS_MF.RData"))
-  dat.all=get(load("./paper_data/OUT_paper/OUT_MF.RData"))
-  c.1='MALE'
-  c.2='FEMALE'
+if(as.paper){ 
+  path.dat="./paper_data/OUT_paper/"
 }else{
-  dat.ss=get(load("./paper_data/OUT_paper/SS_AGE.RData"))
-  dat.all=get(load("./paper_data/OUT_paper/OUT_AGE.RData"))
-  c.1='YOUNG'
-  c.2='OLD'
+  path.dat="./data/OUT/"
+  
 }
+  if(dv =='MF'){
+    dat.ss=get(load(paste0(path.dat,"SS_MF.RData")))
+    dat.all=get(load(paste0(path.dat, "OUT_MF.RData")))
+    c.1='MALE'
+    c.2='FEMALE'
+  }else{
+    dat.ss=get(load(paste0(path.dat, "SS_AGE.RData")))
+    dat.all=get(load(paste0(path.dat, "OUT_AGE.RData")))
+    c.1='YOUNG'
+    c.2='OLD'
+  }
 
-for(k in names(dat.all)){
+
+for(k in names(dat.ss)){
   DD=NULL
   
   for(mo in 2:5){
