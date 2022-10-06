@@ -1,88 +1,185 @@
-samp <- fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt')
-samp$sub.id=spliti(samp$SUBJID,"-",2)
-samp$AGE=as.numeric(spliti(samp$AGE,"-",1))+5
-
-as.paper=TRUE
-
-if(!as.paper){
-  OUT.MF=get(load("./data/OUT/OUT_MF.RData"))
-  OUT.age=get(load("./data/OUT/OUT_AGE.RData"))
-  OUT.all=get(load("./data/OUT/OUT_ALL.RData"))
-  SS.age=get(load("./data/OUT/SS_AGE.RData"))
-  SS.MF=get(load("./data/OUT/SS_MF.RData"))
-  phio=phi=get(load("./data/DIPs.RData"))
+rm(list=ls())
+gc()
+### Libraries ###
+library(vroom)
+library(ggplot2)
+### Functions ###
+spliti= function(x, sp, nb){
+  v=sapply(strsplit(x,sp),"[[",nb)
+  return(v)
 }
 
-if(as.paper){
-  OUT.MF=get(load("./paper_data/OUT_paper/OUT_MF.RData"))
-  OUT.age=get(load("./paper_data/OUT_paper/OUT_AGE.RData"))
-  OUT.all=get(load("./paper_data/OUT_paper/OUT_ALL.RData"))
-  SS.age=get(load("./paper_data/OUT_paper/SS_AGE.RData"))
-  SS.MF=get(load("./paper_data/OUT_paper/SS_MF.RData"))
-  phio=phi=get(load("./paper_data/DIPs.RData"))
+#Plot the cSVD representation of the given OUT file for the selected genes up to specified component
+Plot_cSVD<-function(input, genes, full_col=NULL,loc=NULL, ENSG=F, ncomp=NULL, CT=15, ymax=1.5, dot_size=1.5, label_size=3.5, text_size=12, sectors=1, max_ov=Inf){
+  if(!is.null(full_col)){
+    full_col=full_col[full_col$Class!="Cells",]
+    dec_names=full_col$`Short name`
+    names(dec_names)=full_col$`Full name`
+    colorandum=full_col$`# color`
+    names(colorandum)=full_col$`Full name`}
+  if(is.null(full_col)){
+    nmtz=names(input)
+    if(!is.list(input)) nmtz=colnames(input)
+    colorandum=nmtz
+    names(colorandum)=nmtz
+    colorandum[nmtz]="#008ECC"
+  }
+  if(is.null(loc)){loc=paste(getwd(),"/",sep="")}
+  loco= ifelse(endsWith(loc, ".pdf"), loc, paste(loc,"_cSVD", ".pdf", sep=""))
+  pdf(loco)
+  if (is.list(input))SVD=svd.from.out(input,genes,ENSG=ENSG)
+  else SVD=svd.from.gene.big(input ,genes, ENSG =ENSG)
+  
+  if(is.null(ncomp)) ncomp=ncol(SVD$u)
+  for(i in 1:ncomp){
+    #i=1
+    labs=rownames(SVD$u)
+    for (j in 1:sectors) {
+      in_sector=Arg(SVD$u[,i])%%(2*pi)>(j-1)*(2*pi/sectors) &  Arg(SVD$u[,i])%%(2*pi)<j*(2*pi/sectors)
+      tempu=Mod(SVD$u[in_sector,i])
+      if(length(tempu)>CT){
+        cuts=tempu[base::order(-tempu)][CT]
+        #labs[which(!(labs %in% gene_inf))]=""
+        smz=Mod(SVD$u[,i])<cuts
+        labs[as.logical(smz*in_sector)]=""
+      }
+    }
+    colz=rownames(SVD$v)
+    shepz=rep("all",nrow(SVD$v))
+    deco_names=dec_names
+    if(any(endsWith(rownames(SVD$v),"Male")) || any(endsWith(rownames(SVD$v),"young"))){
+      colz=gsub("-old", "",gsub("-young", "",gsub("-Female", "",gsub("-Male", "", rownames(SVD$v)))))
+      shepz=gsub("^.*-", "", rownames(SVD$v))
+      dec1_names=paste(dec_names, unique(shepz)[1], sep="-")
+      dec2_names=paste(dec_names,unique(shepz)[2], sep="-")
+      names(dec1_names)=paste(names(dec_names), unique(shepz)[1], sep="-")
+      names(dec2_names)=paste(names(dec_names), unique(shepz)[2], sep="-")
+      deco_names=c(dec1_names,dec2_names)
+    }
+    varexp=round((SVD$d[i]^2)/sum(SVD$d^2)*100,0)
+    clock.spread=round(1-Mod(sum(SVD$u[,i]^2/Mod(SVD$u[,i])))/sum(Mod(SVD$u[,i])),4)
+    print(qplot(Arg(SVD$u[,i])%%(2*pi)*12/pi,Mod(SVD$u[,i]))+geom_point(size=dot_size/2)+
+            geom_label_repel(aes(label=labs),size = label_size,max.overlaps = max_ov)+coord_polar()+ylim(0,ymax)+ theme_minimal()+
+            scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+ 
+            labs(title=paste("Genes SVD, mode", i,"E.V.",varexp, "%"),x =paste("Argument of component", i), y = paste("Modulus of component", i))+
+            theme(text=element_text(size=text_size)))
+    
+    print(qplot(Arg(SVD$v[,i])%%(2*pi)*12/pi,Mod(SVD$v[,i]),colour=colz, shape=shepz)+geom_point(size=dot_size/2)+ 
+            theme_minimal()+scale_color_manual(values=colorandum[colz])+coord_polar()+aes(ymin=0, xmin=0,xmax=2*pi)+
+            geom_label_repel(aes(label=deco_names[rownames(SVD$v)]),size = label_size, max.overlaps = max_ov)+theme(legend.position = "none")+
+            scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+scale_y_continuous(breaks=seq(0, 1, by=0.25),expand=c(0,0), lim=c(0, 1.1))+ 
+            labs(title=paste("Tissues SVD, mode", i, "E.V.",varexp, "%"),x =paste("Argument of component", i), y = paste("Modulus of component", i))+
+            theme(text=element_text(size=text_size)))
+    
+    print(qplot(Arg(SVD$u[,i])%%(2*pi)*12/pi,Mod(SVD$u[,i]))+geom_point(size=dot_size)+coord_polar()+
+            aes(ymin=0, xmin=0,xmax=2*pi)+ylim(0,ymax)+theme_minimal()+
+            scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+ 
+            labs(title=paste("Tissues SVD, mode", i,"E.V.",varexp, "%"),x =paste("Argument of component", i), y = paste("Modulus of component", i))+
+            theme(text=element_text(size=text_size)))
+    
+    print(qplot(Arg(SVD$v[,i])%%(2*pi)*12/pi,Mod(SVD$v[,i]),colour=colz, shape=shepz)+geom_point(size=dot_size)+ 
+            theme_minimal()+scale_color_manual(values=colorandum[colz])+coord_polar()+aes(ymin=0, xmin=0,xmax=2*pi)+
+            theme(legend.position = "none")+scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+
+            scale_y_continuous(breaks=seq(0, 1, by=0.25),expand=c(0,0), lim=c(0, 1.1))+ 
+            labs(title=paste("Tissues SVD, mode", i, "E.V.",varexp, "%"),x =paste("Argument of component", i), y = paste("Modulus of component", i))+
+            theme(text=element_text(size=text_size)))
+  }
+  dev.off()
 }
 
-
-colroma=vroom("./paper_data/roma.txt",  col_names = FALSE, show_col_types = FALSE)
-full_col=vroom("./paper_data/GO_full-colorandum.csv", show_col_types = FALSE)
-full_col=full_col[full_col$Class!="Cells",]
-dec_names=full_col$`Short name`
-names(dec_names)=full_col$`Full name`
-colorandum=full_col$`# color`
-names(colorandum)=full_col$`Full name`
-nmz=unique(full_col$Class)
-
-dir.create("./Figure2", showWarnings = FALSE)
-dir.create("./Figure3", showWarnings = FALSE)
-
-
-
-###################### Cumulative model selection #########################
-
-
-MS=T
-MSS=T
-sz=20
-th=1
-qcut=0.2
-strict=F
-val="amp_C"
-
-for (strict in c(FALSE)) {
-  for (div in c("MF", "AGE")){
-    qcut=2
-    if(div=="MF") OUT= OUT.MF
-    if(div=="AGE") OUT= OUT.age
-    pox=unique(gsub("^.*-", "", names(OUT)))
-    nn=names(OUT)[duplicated(gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", names(OUT))))))]
-    nn=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", nn))))
-    OUT=OUT[c(paste(nn,pox[1], sep="-"),paste(nn,pox[2], sep="-"))]
-    for(val in c("R")){
-      if(div=="MF") pdf("./Figure2/Fig2_C-F-I2.pdf")
-      if(div=="AGE")pdf("./Figure3/Fig3_B-F-I2.pdf")
+Plot_MS_cumulative<-function(OUT, MS=T, div="MF", val="R", pth=NULL, strict=F, qcut=0.2, size=20, th=1){
+  pox=unique(gsub("^.*-", "", names(OUT)))
+  nn=names(OUT)[duplicated(gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", names(OUT))))))]
+  nn=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", nn))))
+  OUT=OUT[c(paste(nn,pox[1], sep="-"),paste(nn,pox[2], sep="-"))]
+  if(is.null(pth)){
+    if(div=="MF") pdf("./Figure2/Fig2_C-F-I.pdf")
+    if(div=="AGE")pdf("./Figure3/Fig3_B-F-I.pdf")
+  }else{
+    pdf(pth)
+  }
+  
+  all=NULL
+  tbt=NULL
+  
+  id=list(div1=which(endsWith(names(OUT),paste("-", pox[1], sep=""))),div2=which( endsWith(names(OUT),paste("-", pox[2], sep=""))))
+  for (ik in names(id) ) {
+    fulll=NULL
+    for(j in names(OUT)[id[[ik]]]){
+      out=OUT[[j]]
+      fit=out$data.fit
+      jj=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", j))))
+      if(div=="MF"){SS=SS.MF}
+      else{SS=SS.age}
+      md=l=gsub("^.*-", "", j)
+      if(strict==FALSE){
+        if(md %in% c("OLD", "FEMALE")){mds=c(3,4,5)}
+        else{mds=c(2,4,5)}}
+      else{
+        if(md %in% c("OLD", "FEMALE")){mds=c(3)}
+        else{mds=c(2)}}
+      idt=paste("amp_", md, sep="")
       
-      all=NULL
-      tbt=NULL
-      
-      id=list(div1=which(endsWith(names(OUT),paste("-", pox[1], sep=""))),div2=which( endsWith(names(OUT),paste("-", pox[2], sep=""))))
-      for (ik in names(id) ) {
+      #interesting.genes=inter.genes
+      inf.phi=out$phi
+      exprx=out$E
+      full=fit[,c("amp","a","b","R2", "genes","qval", "pval")]
+      ss=SS[[jj]]
+      sg=rownames(ss)[which(ss$model.c %in% mds)]
+      full=full[sg,]
+      full=cbind(full, ss[sg, idt])
+      colnames(full)[ncol(full)]="amp_C"
+      #if (val=="R") {full=subset(full, qval<qcut)}
+      full$R=2*sqrt(full$a^2+full$b^2)
+      fulll=rbind(fulll, full)
+    }
+    full=fulll
+    if(nrow(full)>1){
+      full$kind=names(OUT)[j]
+      all=rbind(all,full)
+      breaks = seq(0, max(max(full[,val])+0.1,1), by=0.01)
+      if(val %in% c("pval","qval")) breaks=breaks^7
+      amp.cut = cut(full[,val], breaks, right=FALSE)
+      freq.cut = table(amp.cut)
+      if(val %in% c("R", "amp_C")) freq.cut = rev(freq.cut) #also tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=names(OUT)[j])
+      cumsum.frq=c(cumsum(freq.cut),nrow(full[,val]))+1
+      tbz=tibble(R=breaks[-1], n.genes=cumsum.frq, kind=l)
+      if(val%in% c("R", "amp_C")) tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=l)
+      tbt=rbind(tbt,tbz)
+    }
+  }
+  if(!is.null(tbt)){
+    if(val %in% c("R", "amp_C")) print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
+                                         scale_y_log10()+labs(title="Full",y="# of genes", x="log2(peak to trough)", color="", linetype="")+
+                                         theme_minimal()+scale_color_manual(values=c("#008ECC","#111E6C","#1034A6","darkred"))+
+                                         theme(text = element_text(size=sz)))#+theme(legend.position = "none"))
+    else print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+scale_y_log10()+
+                 scale_x_continuous(trans=reverselog_trans(10))+labs(title="Full",y="# of genes", x=val)+
+                 theme_minimal()+scale_color_manual(values=c("#008ECC","#111E6C","#1034A6","darkred"))+
+                 theme(text = element_text(size=sz)))#+theme(legend.position = "none"))
+  }
+  for(i in nmz){
+    ct=which(full_col$Class==i)
+    tbt=NULL
+    if(length(intersect(full_col$`Full name`[ct],nn))>0){
+      for(l in pox){
         fulll=NULL
-        for(j in names(OUT)[id[[ik]]]){
+        for(jdl in intersect(full_col$`Full name`[ct],nn)){
+          j=paste(jdl, l, sep="-")
           out=OUT[[j]]
           fit=out$data.fit
           jj=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", j))))
           if(div=="MF"){SS=SS.MF}
           else{SS=SS.age}
-          md=l=gsub("^.*-", "", j)
+          md=gsub("^.*-", "", j)
           if(strict==FALSE){
             if(md %in% c("OLD", "FEMALE")){mds=c(3,4,5)}
             else{mds=c(2,4,5)}}
           else{
             if(md %in% c("OLD", "FEMALE")){mds=c(3)}
             else{mds=c(2)}}
-          idt=paste("amp_", md, sep="")
-          
           #interesting.genes=inter.genes
+          idt=paste("amp_", md, sep="")
           inf.phi=out$phi
           exprx=out$E
           full=fit[,c("amp","a","b","R2", "genes","qval", "pval")]
@@ -99,7 +196,7 @@ for (strict in c(FALSE)) {
         if(nrow(full)>1){
           full$kind=names(OUT)[j]
           all=rbind(all,full)
-          breaks = seq(0, max(max(full[,val])+0.1,1), by=0.01)
+          breaks=seq(0, max(max(full[,val])+0.1,1), by=0.01)
           if(val %in% c("pval","qval")) breaks=breaks^7
           amp.cut = cut(full[,val], breaks, right=FALSE)
           freq.cut = table(amp.cut)
@@ -112,143 +209,82 @@ for (strict in c(FALSE)) {
       }
       if(!is.null(tbt)){
         if(val %in% c("R", "amp_C")) print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
-                                             scale_y_log10()+labs(title="Full",y="# of genes", x="log2(peak to trough)", color="", linetype="")+
+                                             scale_y_log10()+labs(title=i,y="# of genes", x="log2(peak to trough)", color="", linetype="")+
                                              theme_minimal()+scale_color_manual(values=c("#008ECC","#111E6C","#1034A6","darkred"))+
                                              theme(text = element_text(size=sz)))#+theme(legend.position = "none"))
-        else print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+scale_y_log10()+
-                     scale_x_continuous(trans=reverselog_trans(10))+labs(title="Full",y="# of genes", x=val)+
-                     theme_minimal()+scale_color_manual(values=c("#008ECC","#111E6C","#1034A6","darkred"))+
+        else print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
+                     scale_y_log10()+scale_x_continuous(trans=reverselog_trans(10))+
+                     labs(title=i,y="# of genes", x=val)+theme_minimal()+
+                     scale_color_manual(values=c("#008ECC","#111E6C","#1034A6","darkred"))+
                      theme(text = element_text(size=sz)))#+theme(legend.position = "none"))
       }
-      for(i in nmz){
-        ct=which(full_col$Class==i)
-        tbt=NULL
-        if(length(intersect(full_col$`Full name`[ct],nn))>0){
-          for(l in pox){
-            fulll=NULL
-            for(jdl in intersect(full_col$`Full name`[ct],nn)){
-              j=paste(jdl, l, sep="-")
-              out=OUT[[j]]
-              fit=out$data.fit
-              jj=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", j))))
-              if(div=="MF"){SS=SS.MF}
-              else{SS=SS.age}
-              md=gsub("^.*-", "", j)
-              if(strict==FALSE){
-                if(md %in% c("OLD", "FEMALE")){mds=c(3,4,5)}
-                else{mds=c(2,4,5)}}
-              else{
-                if(md %in% c("OLD", "FEMALE")){mds=c(3)}
-                else{mds=c(2)}}
-              #interesting.genes=inter.genes
-              idt=paste("amp_", md, sep="")
-              inf.phi=out$phi
-              exprx=out$E
-              full=fit[,c("amp","a","b","R2", "genes","qval", "pval")]
-              ss=SS[[jj]]
-              sg=rownames(ss)[which(ss$model.c %in% mds)]
-              full=full[sg,]
-              full=cbind(full, ss[sg, idt])
-              colnames(full)[ncol(full)]="amp_C"
-              #if (val=="R") {full=subset(full, qval<qcut)}
-              full$R=2*sqrt(full$a^2+full$b^2)
-              fulll=rbind(fulll, full)
-            }
-            full=fulll
-            if(nrow(full)>1){
-              full$kind=names(OUT)[j]
-              all=rbind(all,full)
-              breaks=seq(0, max(max(full[,val])+0.1,1), by=0.01)
-              if(val %in% c("pval","qval")) breaks=breaks^7
-              amp.cut = cut(full[,val], breaks, right=FALSE)
-              freq.cut = table(amp.cut)
-              if(val %in% c("R", "amp_C")) freq.cut = rev(freq.cut) #also tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=names(OUT)[j])
-              cumsum.frq=c(cumsum(freq.cut),nrow(full[,val]))+1
-              tbz=tibble(R=breaks[-1], n.genes=cumsum.frq, kind=l)
-              if(val%in% c("R", "amp_C")) tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=l)
-              tbt=rbind(tbt,tbz)
-            }
-          }
-          if(!is.null(tbt)){
-            if(val %in% c("R", "amp_C")) print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
-                                                 scale_y_log10()+labs(title=i,y="# of genes", x="log2(peak to trough)", color="", linetype="")+
-                                                 theme_minimal()+scale_color_manual(values=c("#008ECC","#111E6C","#1034A6","darkred"))+
-                                                 theme(text = element_text(size=sz)))#+theme(legend.position = "none"))
-            else print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
-                         scale_y_log10()+scale_x_continuous(trans=reverselog_trans(10))+
-                         labs(title=i,y="# of genes", x=val)+theme_minimal()+
-                         scale_color_manual(values=c("#008ECC","#111E6C","#1034A6","darkred"))+
-                         theme(text = element_text(size=sz)))#+theme(legend.position = "none"))
-          }
-        }
-      }
-      for(tx in nn){
-        tbt=NULL
-        for(j in c(paste(tx,pox[1], sep="-"),paste(tx,pox[2], sep="-"))){
-          out=OUT[[j]]
-          fit=out$data.fit
-          jj=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", j))))
-          if(div=="MF"){SS=SS.MF}
-          else{SS=SS.age}
-          md=l=gsub("^.*-", "", j)
-          if(strict==FALSE){
-            if(md %in% c("OLD", "FEMALE")){mds=c(3,4,5)}
-            else{mds=c(2,4,5)}}
-          else{
-            if(md %in% c("OLD", "FEMALE")){mds=c(3)}
-            else{mds=c(2)}}       
-          idt=paste("amp_", md, sep="")
-          inf.phi=out$phi
-          exprx=out$E
-          full=fit[,c("amp","a","b","R2", "genes","qval", "pval")]
-          ss=SS[[jj]]
-          sg=rownames(ss)[which(ss$model.c %in% mds)]
-          full=full[sg,]
-          full=cbind(full, ss[sg, idt])
-          colnames(full)[ncol(full)]="amp_C"
-          #if (val=="R") {full=subset(full, qval<qcut)}
-          full$R=2*sqrt(full$a^2+full$b^2)
-          if(nrow(full)>1){
-            full$kind=names(OUT)[j]
-            all=rbind(all,full)
-            breaks = seq(0, max(max(full[,val])+0.1,1), by=0.01)
-            if(val %in% c("pval","qval")) breaks=breaks^7
-            amp.cut = cut(full[,val], breaks, right=FALSE)
-            freq.cut = table(amp.cut)
-            if(val %in% c("R", "amp_C")) freq.cut = rev(freq.cut) 
-            cumsum.frq=c(cumsum(freq.cut),nrow(full[,val]))+1
-            tbz=tibble(R=breaks[-1], n.genes=cumsum.frq, kind=l)
-            if(val%in% c("R", "amp_C")) tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=l)
-            tbt=rbind(tbt,tbz)
-          }
-        }
-        if(!is.null(tbt)){
-          if(val %in% c("R", "amp_C")) print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
-                                               scale_y_log10()+labs(title=tx,y="# of genes", x="log2(peak to trough)", color="", linetype="")+
-                                               theme_minimal()+scale_color_manual(values=c("#008ECC","#111E6C","#1034A6","darkred"))+
-                                               theme(text = element_text(size=sz)))#+theme(legend.position = "none"))
-          else print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
-                       scale_y_log10()+scale_x_continuous(trans=reverselog_trans(10))+
-                       labs(title=tx,y="# of genes", x=val)+theme_minimal()+
-                       scale_color_manual(values=c("#008ECC","#111E6C","#1034A6","darkred"))+
-                       theme(text = element_text(size=sz)))#+theme(legend.position = "none"))
-        }
-      } 
-      dev.off()
     }
   }
+  for(tx in nn){
+    tbt=NULL
+    for(j in c(paste(tx,pox[1], sep="-"),paste(tx,pox[2], sep="-"))){
+      out=OUT[[j]]
+      fit=out$data.fit
+      jj=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", j))))
+      if(div=="MF"){SS=SS.MF}
+      else{SS=SS.age}
+      md=l=gsub("^.*-", "", j)
+      if(strict==FALSE){
+        if(md %in% c("OLD", "FEMALE")){mds=c(3,4,5)}
+        else{mds=c(2,4,5)}}
+      else{
+        if(md %in% c("OLD", "FEMALE")){mds=c(3)}
+        else{mds=c(2)}}       
+      idt=paste("amp_", md, sep="")
+      inf.phi=out$phi
+      exprx=out$E
+      full=fit[,c("amp","a","b","R2", "genes","qval", "pval")]
+      ss=SS[[jj]]
+      sg=rownames(ss)[which(ss$model.c %in% mds)]
+      full=full[sg,]
+      full=cbind(full, ss[sg, idt])
+      colnames(full)[ncol(full)]="amp_C"
+      #if (val=="R") {full=subset(full, qval<qcut)}
+      full$R=2*sqrt(full$a^2+full$b^2)
+      if(nrow(full)>1){
+        full$kind=names(OUT)[j]
+        all=rbind(all,full)
+        breaks = seq(0, max(max(full[,val])+0.1,1), by=0.01)
+        if(val %in% c("pval","qval")) breaks=breaks^7
+        amp.cut = cut(full[,val], breaks, right=FALSE)
+        freq.cut = table(amp.cut)
+        if(val %in% c("R", "amp_C")) freq.cut = rev(freq.cut) 
+        cumsum.frq=c(cumsum(freq.cut),nrow(full[,val]))+1
+        tbz=tibble(R=breaks[-1], n.genes=cumsum.frq, kind=l)
+        if(val%in% c("R", "amp_C")) tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=l)
+        tbt=rbind(tbt,tbz)
+      }
+    }
+    if(!is.null(tbt)){
+      if(val %in% c("R", "amp_C")) print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
+                                           scale_y_log10()+labs(title=tx,y="# of genes", x="log2(peak to trough)", color="", linetype="")+
+                                           theme_minimal()+scale_color_manual(values=c("#008ECC","#111E6C","#1034A6","darkred"))+
+                                           theme(text = element_text(size=sz)))#+theme(legend.position = "none"))
+      else print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
+                   scale_y_log10()+scale_x_continuous(trans=reverselog_trans(10))+
+                   labs(title=tx,y="# of genes", x=val)+theme_minimal()+
+                   scale_color_manual(values=c("#008ECC","#111E6C","#1034A6","darkred"))+
+                   theme(text = element_text(size=sz)))#+theme(legend.position = "none"))
+    }
+  } 
+  dev.off()
 }
 
-
-############### Density MS ############
-
-for (div in c("MF", "AGE")) {
+Plot_MS_density<-function(OUT, phi, phenot, MS=T, div="MF", pth=NULL, strict=F, qcut=0.2, size=20, th=1){
+  
   full_gene_phi=NULL
-  if(div=="MF") pdf("./Figure2/Fig2_B-E-H2.pdf")
-  if(div=="AGE")pdf("./Figure3/Fig3_C-E-H2.pdf")
-  if(div=="MF") OUT= OUT.MF
-  if(div=="AGE") OUT= OUT.age
-  phenot=get(load("./paper_data/phenotypes.RData"))
+  if(is.null(pth)){
+    if(div=="MF") pdf("./Figure2/Fig2_B-E-H2.pdf")
+    if(div=="AGE")pdf("./Figure3/Fig3_C-E-H2.pdf")
+  }else{
+    pdf(pth)
+  }
+  
   phenot$SUBJID=gsub("^.*-","",phenot$SUBJID)
   phenot$age_cat="middle"
   phenot$sex=phenot$SEX
@@ -256,7 +292,7 @@ for (div in c("MF", "AGE")) {
   phenot$sex[phenot$SEX==2]="female"
   phenot$age_cat[phenot$AGE>60]="OLD"
   phenot$age_cat[phenot$AGE<50]="YOUNG"
-  if(as.paper)phio=  get(load("./paper_data/DIPs.RData")) else phio=get(load("./data/DIPs.RData"))
+  phio=phi
   if(div=="MF"){
     phi.dff=NULL
     for(i in c(1:2)){
@@ -325,7 +361,7 @@ for (div in c("MF", "AGE")) {
       if (MS) df=df[sg,]
       if(!MS) {df=subset(df,qval<qcut & amp>Rcut)}
       gene_phi=df$phase/12*pi
-      if (MSS) {
+      if (MS) {
         ssg=ss[sg,]
         lnt=ncol(ss)
         if(md %in% c("OLD", "FEMALE")){gene_phi=ssg[,lnt-7]/12*pi}
@@ -445,66 +481,158 @@ for (div in c("MF", "AGE")) {
 }
 
 
-######### Barplot MS ########
+### Main ###
+if(!file.exists(file="./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")){ 
+  samp = fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt')
+  fwrite(samp, file = "./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")
+}else{
+  samp = fread("./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")
+}
+samp$sub.id=spliti(samp$SUBJID,"-",2)
+samp$AGE=as.numeric(spliti(samp$AGE,"-",1))+5
 
-for (div in c("MF", "AGE")) {
-  if(div== "MF") SS=SS.MF
-  if(div=="AGE") SS=SS.age
-  model_gn=tibble()
-  totz=tibble()
-  for(j in names(SS)){
-    tmg=tibble(tissue=j,genes=0, scaled=0, model=0)
-    ss=SS[[j]]
-    tot=0
-    for (mds in c(2:5)) {
-      sg=rownames(ss)[which(ss$model.c %in% mds)]
-      tot=tot+length(sg)
-    }
-    for (mds in c(2:5)) {
-      sg=rownames(ss)[which(ss$model.c %in% mds)]
-      tmg[2]=length(sg)
-      tmg[3]=tmg[2]/tot
-      tmg[4]=mds
-      model_gn=rbind(model_gn, tmg)
-    }
-    tut=tibble(tissue=j,genes=tot)
-    totz=rbind(totz, tut)
-  }
-  hjst=1
-  ang=90
-  model_gn$model=factor(model_gn$model, c(5,4,3,2))
-  model2=model_gn[model_gn$model==2,]
-  totuz=totz$tissue[base::order(totz$genes)]
-  totz$tissue=factor(totz$tissue,totuz)
-  model_gn$tissue=factor(model_gn$tissue,totuz)
-  #p1=
-  filz=c(colroma$hex[c(50,100,150,200)])
-  p1=ggplot(model_gn, aes(x=tissue, y=scaled,fill = as.factor(model)))+geom_bar(stat="identity")+
-    scale_fill_manual(values=filz,name="Model")+theme_void()+
-    theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15))+
-    labs(x="Tissue", y="Relative fraction of genes in each model")
+if(!exists("N.cores")) N.cores = 18 
+if(!exists("as.paper")) as.paper=FALSE
+if(!exists("use.paper.DIP")) use.paper.DIP=FALSE
+
+if(use.paper.DIP)   phi=get(load("./paper_data/DIPs.RData")) else   phi=get(load("./data/DIPs.RData"))
+
+if(!as.paper){
+  OUT.MF=get(load("./data/OUT/OUT_MF.RData"))
+  OUT.age=get(load("./data/OUT/OUT_AGE.RData"))
+  OUT.all=get(load("./data/OUT/OUT_ALL.RData"))
+  SS.age=get(load("./data/OUT/SS_AGE.RData"))
+  SS.MF=get(load("./data/OUT/SS_MF.RData"))
   
-  if(div=="MF") ggsave( filename= "./Figure2/Fig2_D1.pdf",p1,width = 12, height = 10)
-  if(div=="AGE") ggsave( filename= "./Figure2/Fig3_D1.pdf",p1,width = 12, height = 10)    
-  
-  p2=ggplot(totz, aes(x=tissue, y=genes))+geom_bar(stat="identity", fill = colroma$hex[250])+
-    theme_minimal()+theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15),panel.grid.minor = element_blank(),panel.grid.major = element_blank())+
-    labs(x="Tissue", y="total number of genes in models 2 to 5")+theme(axis.title.x = element_blank(), axis.text.x = element_blank())
-  
-  if(div=="MF") ggsave( filename= "./Figure2/Fig2_D2.pdf",p2,width = 12, height = 10)
-  if(div=="AGE") ggsave( filename= "./Figure3/Fig3_D2.pdf",p2,width = 12, height = 10) 
 }
 
-lb=6
-pt=3
-sz=18
+if(as.paper){
+  OUT.MF=get(load("./paper_data/OUT_paper/OUT_MF.RData"))
+  OUT.age=get(load("./paper_data/OUT_paper/OUT_AGE.RData"))
+  OUT.all=get(load("./paper_data/OUT_paper/OUT_ALL.RData"))
+  SS.age=get(load("./paper_data/OUT_paper/SS_AGE.RData"))
+  SS.MF=get(load("./paper_data/OUT_paper/SS_MF.RData"))
+  
+}
+
+
+colroma=vroom("./paper_data/roma.txt",  col_names = FALSE, show_col_types = FALSE)
+colroma$hex=paste("#", as.hexmode(round(colroma$X1*255,0)),as.hexmode(round(colroma$X2*255,0)),as.hexmode(round(colroma$X3*255,0)), sep="")
+full_col=vroom("./paper_data/GO_full-colorandum.csv", show_col_types = FALSE)
+full_col=full_col[full_col$Class!="Cells",]
+dec_names=full_col$`Short name`
+names(dec_names)=full_col$`Full name`
+colorandum=full_col$`# color`
+names(colorandum)=full_col$`Full name`
+nmz=unique(full_col$Class)
+
+dir.create("./Figure2", showWarnings = FALSE)
+dir.create("./Figure3", showWarnings = FALSE)
+
+phenot=get(load("./paper_data/phenotypes.RData"))
+
+###################### model selection plots #########################
+
+
+#Parameters for the subsequent plots
+
+
+#MS: use model selection
+MS=T
+#Plot parameters
+sz=20
+th=1
+#q-value cut. Note that any qcut>0.2 has no bearing if MS==T
+qcut=0.2
+#Parameter to determine if using genes only rhythmic in condition X or genes also rhythmic in condition X
+strict=F
+#Value for the cumulative plots, possible values:
+#"R": amplitude
+#"pval": p-value
+#"qval": q-value
+
+val="R"
+
+
+Plot_MS_densities(OUT=OUT.MF, MS=T, div="MF", val="R", pth=NULL, strict=F, qcut=0.2, size=20, th=1)
+
 for (div in c("MF", "AGE")){
   if(div=="MF") {
     OUT= OUT.MF
-    Plot_cSVD(OUT, gene_inf, full_col,loc =file.path(wd, "Figure2/Fig2_A") , CT=15, dot_size =pt, label_size = lb, text_size = sz)
+    pthc="./Figure2/Fig2_C-F-I.pdf"
+    pthb="./Figure2/Fig2_B-E-H.pdf"
   }
-  if(div=="AGE") {
+  if(div=="AGE"){
     OUT= OUT.age
-    Plot_cSVD(OUT, gene_inf, full_col,loc =file.path(wd, "Figure3/Fig3_A") , CT=15, dot_size =pt, label_size = lb, text_size = sz)
-  }
+    pthc="./Figure3/Fig3_B-F-I.pdf"
+    pthb="./Figure2/Fig2_C-E-H.pdf"
+  } 
+  Plot_MS_cumulative(OUT=OUT, MS=MS, div=div, val=val, pth=pthc, strict=strict, qcut=qcut, size=size, th=th)
+  
+  Plot_MS_density(OUT=OUT, phi=phi, phenot=phenot, MS=MS, div=div, pth=pthd, strict=strict, qcut=qcut, size=size, th=th)
 }
+
+######### Barplot MS ########
+  
+  for (div in c("MF", "AGE")) {
+    if(div== "MF") SS=SS.MF
+    if(div=="AGE") SS=SS.age
+    model_gn=tibble()
+    totz=tibble()
+    for(j in names(SS)){
+      tmg=tibble(tissue=j,genes=0, scaled=0, model=0)
+      ss=SS[[j]]
+      tot=0
+      for (mds in c(2:5)) {
+        sg=rownames(ss)[which(ss$model.c %in% mds)]
+        tot=tot+length(sg)
+      }
+      for (mds in c(2:5)) {
+        sg=rownames(ss)[which(ss$model.c %in% mds)]
+        tmg[2]=length(sg)
+        tmg[3]=tmg[2]/tot
+        tmg[4]=mds
+        model_gn=rbind(model_gn, tmg)
+      }
+      tut=tibble(tissue=j,genes=tot)
+      totz=rbind(totz, tut)
+    }
+    hjst=1
+    ang=90
+    model_gn$model=factor(model_gn$model, c(5,4,3,2))
+    model2=model_gn[model_gn$model==2,]
+    totuz=totz$tissue[base::order(totz$genes)]
+    totz$tissue=factor(totz$tissue,totuz)
+    model_gn$tissue=factor(model_gn$tissue,totuz)
+    #p1=
+    filz=c(colroma$hex[c(50,100,150,200)])
+    p1=ggplot(model_gn, aes(x=tissue, y=scaled,fill = as.factor(model)))+geom_bar(stat="identity")+
+      scale_fill_manual(values=filz,name="Model")+theme_void()+
+      theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15))+
+      labs(x="Tissue", y="Relative fraction of genes in each model")
+    
+    if(div=="MF") ggsave( filename= "./Figure2/Fig2_D1.pdf",p1,width = 12, height = 10)
+    if(div=="AGE") ggsave( filename= "./Figure2/Fig3_D1.pdf",p1,width = 12, height = 10)    
+    
+    p2=ggplot(totz, aes(x=tissue, y=genes))+geom_bar(stat="identity", fill = colroma$hex[250])+
+      theme_minimal()+theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15),panel.grid.minor = element_blank(),panel.grid.major = element_blank())+
+      labs(x="Tissue", y="total number of genes in models 2 to 5")+theme(axis.title.x = element_blank(), axis.text.x = element_blank())
+    
+    if(div=="MF") ggsave( filename= "./Figure2/Fig2_D2.pdf",p2,width = 12, height = 10)
+    if(div=="AGE") ggsave( filename= "./Figure3/Fig3_D2.pdf",p2,width = 12, height = 10) 
+  }
+  
+  lb=6
+  pt=3
+  sz=18
+  for (div in c("MF", "AGE")){
+    if(div=="MF") {
+      OUT= OUT.MF
+      Plot_cSVD(OUT, gene_inf, full_col,loc =file.path(wd, "Figure2/Fig2_A") , CT=15, dot_size =pt, label_size = lb, text_size = sz)
+    }
+    if(div=="AGE") {
+      OUT= OUT.age
+      Plot_cSVD(OUT, gene_inf, full_col,loc =file.path(wd, "Figure3/Fig3_A") , CT=15, dot_size =pt, label_size = lb, text_size = sz)
+    }
+  }
+  

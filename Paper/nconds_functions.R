@@ -44,7 +44,6 @@ simply_it = function(x){
 
 
 creat_matrix_list = function(t, conds, n.co, period){
-  require(combinat)  
   
   my_matrix = list()
   
@@ -203,101 +202,6 @@ compute_param = function(bf,n.co,period,conds){
   paramout=c(bf$model,bf$AICW,paramout)
   names(paramout) = c('model','AICW',paste(c('mean','amp','relamp','phase'),rep(unique(conds),each =4), sep = "_"))
   paramout
-}
-#################################################################################
-plot_models = function(x, file_path_name, t, n.co, condi_name, period = 24, test=FALSE){
-  require(plotrix)
-  conds=condi_name
-  pdf(file =paste(file_path_name,'.pdf',sep=''))
-  
-  nb = table(x$model)
-  nb = nb[order(-nb)]
-  mo = as.numeric(names(nb))
-  
-  
-  for(i in mo){
-    
-    pos = which((x$model ==i))
-    
-    if (test){
-      if (length(pos) < 150){
-        break
-      }
-    }
-    
-    print(paste("Model", i, "has", length(pos), "genes."))
-    
-    if(length(pos)>1){
-      x_s = x[pos,]
-      pos_phase = grep('phase',names(x_s))
-      sum_phase = apply(x_s[,pos_phase],2,sum)
-      if(sum(sum_phase)!=0){
-        x_s = x_s[order(x_s[,pos_phase[min(which(sum_phase !=0))]]),]
-      }
-      
-    
-      
-      x_s.1 = x_s[,1:(length(t))] 
-      
-      means = sapply(unique(condi_name), function(name) { apply(x_s.1[,grep(name, names(x_s.1))], 1, mean) }) # apply mean for each gene in each condition
-      
-      for(m in colnames(means)){
-        x_s.1[,grep(m,names(x_s.1))] = sweep(x_s.1[,grep(m,names(x_s.1))],1,means[,m],FUN='-')
-      }
-      
-      # GLOBAL VARIABLES IN ALL-CAPS because HEATMAP doesn't recognize it otherwise.
-      # set as global variable because heatmap does not recognize abline() with variable input
-      t_cond = table(conds)
-      t_cond = t_cond[match(names(t_cond),unique(conds))]
-      
-      cond_begins <- c(1,cumsum(t_cond))  # represent index start of next condition. 
-      cond_mid <- diff(c(1,cumsum(t_cond))) / 2  # mid distance between first sample in cond1 and last sample in cond1.
-      VLINE_X_LOC <<- cond_begins[2:(length(cond_begins)-1)]  + 0.5 # Add 0.5 to get it between two samples.
-      TEXT_X_LOC <<- cond_begins[-length(cond_begins)] + cond_mid  # a vector in middle of sample, can put text labels conveniently.
-      TEXT_Y_LOC <<- 0.99 * length(pos)  # number of genes
-      C_NAME <<- unique(condi_name)
-      heatmap(as.matrix(x_s.1), 
-              Rowv = NA, 
-              Colv = NA, 
-              ylab = NA ,
-              labCol = paste('ZT',t, sep = "_"),
-              labRow = NA,
-              scale = NULL, 
-              add.expr = c(abline(v = VLINE_X_LOC, 
-                                 col = 'white'),
-                           text(x=TEXT_X_LOC, 
-                                y=TEXT_Y_LOC, 
-                                labels = C_NAME,
-                                col = 'white')),
-              main = paste("model",i," #Genes",length(x_s[,1]),sep =" "), 
-              col = colorRampPalette(c('red','black','green'))(1000))
-      
-      par(mfrow=c(1+round(length(pos_phase)/3),3))
-      ba = 1
-      for(kk in pos_phase){
-        
-        if(sum(x_s[,kk]) !=0){
-          circular_phase24H_histogram(x_s[,kk], C_NAME[ba], period)
-        }
-        ba = ba + 1
-      }
-      bas = unique(sum_phase)
-      la = match(bas,sum_phase)
-      if(length(unique(sum_phase)) > 1){
-        
-        
-        pairs(x_s[,pos_phase[la]],cex = 0.2)
-        pairs(x_s[,(pos_phase[la]-1)],cex = 0.2)
-        
-      }
-      
-      write.table(rownames(x_s),file =paste(file_path_name,i,'.txt',sep=""),quote = FALSE, row.names = FALSE,col.names = FALSE)
-      
-    }
-    
-  }
-  dev.off()
-  
 }
 ######################################################################################
 do_all = function(x,t,n.co,period,my_mat,conds){

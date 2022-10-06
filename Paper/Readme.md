@@ -30,6 +30,10 @@ Fig_2-3.R
 
 Complex_heatmaps.R
 
+## Debugging
+
+The code has been tested on a clean installation of R and should smoothly run; however, it required  restart of the R session for the installation of some packages.
+
 ## Reproducibility
 
 There is in the code the as.paper variable set to TRUE by default.

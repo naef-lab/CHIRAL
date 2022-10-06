@@ -32,8 +32,8 @@ NULL
 nconds <- function(dat, conds, t, 
                    period = 24, 
                    out.prefix = 'nconds_output', 
-                   write.intermediates = TRUE, N.cores=1){
-                   
+                   write.intermediates = FALSE, N.cores=1){
+  
   if (missing(conds) & missing(t)){
     nam.split <- strsplit(names(dat),"_")
     conds <- as.factor(sapply(nam.split, "[[", 1))
@@ -51,25 +51,19 @@ nconds <- function(dat, conds, t,
   }
   dat.2=split(dat, rownames(dat))
   fit = parallel::mclapply(dat.2,
-                 do_all,
-                 t=t,
-                 n.co=n.co,
-                 period=period,
-                 my_mat=my_mat,
-                 conds=conds,
-                 mc.cores=N.cores, mc.preschedule = TRUE)
+                           do_all,
+                           t=t,
+                           n.co=n.co,
+                           period=period,
+                           my_mat=my_mat,
+                           conds=conds,
+                           mc.cores=N.cores, mc.preschedule = TRUE)
   if (write.intermediates){
     save(fit, file = paste0(out.prefix, ".fit_output.Robj"))
   }
   
   data <- InsertFitToMat(fit, dat,n.co)
-  plot_models(data,
-              paste0(out.prefix, ".plots"), 
-              t, 
-              n.co, 
-              conds,
-              period = 24)
-              return(data)
+  return(data)
 }
 
 ##########################################################################################

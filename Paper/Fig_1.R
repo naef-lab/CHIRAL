@@ -1,4 +1,9 @@
+rm(list=ls())
+gc()
 #### Libraries ####
+list.of.packages <- c("vroom", "tibble", "gridExtra", "ggrepel")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) BiocManager::install(new.packages, force=TRUE)
 library(vroom)
 library(ggplot2)
 library(tibble)
@@ -7,6 +12,7 @@ library(ggrepel)
 ########
 
 #### Functions ####
+#Plot the polar density of genes/donors for the out file given 
 Plot_density<-function(OUT, phi, R.plot=FALSE, R.df=FALSE,cut=0.1, varz="pval", comp="small", title_param="", compet="", sz=20, th=1){
   phi.df=tibble(phi=rep((1:1000-1)/500*pi,1))
   phi.df$hour=phi.df$phi/pi*12
@@ -50,7 +56,7 @@ Plot_density<-function(OUT, phi, R.plot=FALSE, R.df=FALSE,cut=0.1, varz="pval", 
   else if(R.df) return(phi.df)
 }
 
-
+#Plot the cSVD representation of the given OUT file for the selected genes up to specified component
 Plot_cSVD<-function(input, genes, full_col=NULL,loc=NULL, ENSG=F, ncomp=NULL, CT=15, ymax=1.5, dot_size=1.5, label_size=3.5, text_size=12, sectors=1, max_ov=Inf){
   if(!is.null(full_col)){
     full_col=full_col[full_col$Class!="Cells",]
@@ -129,7 +135,7 @@ Plot_cSVD<-function(input, genes, full_col=NULL,loc=NULL, ENSG=F, ncomp=NULL, CT
 }
 
 
-
+#Plot the profiles of the selected genes in selected tissues and organizes them in a grid
 Plot_profiles<-function(OUT, tissues, geni, plt.hist=FALSE, R.plot=FALSE, val="pval", text_size=12, title_add="", always_plot_fit=F, vcut=0.2, xl=NULL, period=24){
   p2=period/2
   nmz=names(OUT)
@@ -222,7 +228,7 @@ Plot_profiles<-function(OUT, tissues, geni, plt.hist=FALSE, R.plot=FALSE, val="p
   if(R.plot) return(f.plot)
 }
 
-
+#CAlculate the svd for an OUT file
 svd.from.out<-function(OUT, inter.genes, ENSG=F){
   gene.c=matrix(0, nrow = length(inter.genes),ncol=length(names(OUT)))
   dimnames(gene.c)=list(inter.genes,names(OUT))
@@ -249,13 +255,13 @@ svd.from.out<-function(OUT, inter.genes, ENSG=F){
     B=A
     A=complex(real = A[,"a"], imaginary =  A[,"b"])
     names(A)=rownames(B)
-  
+    
     gene.c[,i]=A[inter.genes]
   }
   gene.c[is.na(gene.c)]=0
   if(ncol(gene.c)*nrow(gene.c)==0){return(NULL)}
   SVD=svd(gene.c)
-
+  
   for(k in 1:length(SVD$d)){
     mn=sum(SVD$v[,k])
     rot=Conj(mn)/Mod(mn)
@@ -279,18 +285,14 @@ svd.from.out<-function(OUT, inter.genes, ENSG=F){
 colroma=vroom("./paper_data/roma.txt",  col_names = FALSE)
 colroma$hex=paste("#", as.hexmode(round(colroma$X1*255,0)),as.hexmode(round(colroma$X2*255,0)),as.hexmode(round(colroma$X3*255,0)), sep="")
 full_col=vroom("./paper_data/GO_full-colorandum.csv", show_col_types = FALSE)
-colroma=vroom("./paper_data/roma.txt",  col_names = FALSE, show_col_types = FALSE)
 
-as.paper=FALSE
+if(!exists("N.cores")) N.cores = 18 
+if(!exists("as.paper")) as.paper=FALSE
+if(!exists("use.paper.DIP")) use.paper.DIP=FALSE
 
-if(as.paper){
-  load("./paper_data/OUT_paper/OUT_ALL.RData")
-  load("./paper_data/DIPs.RData")
-}
-if(!as.paper){
-  load("./data/OUT/OUT_ALL.RData")
-  load("./data/DIPs.RData")
-}
+if(as.paper) load("./paper_data/OUT_paper/OUT_ALL.RData") else load("./data/OUT/OUT_ALL.RData")
+if(use.paper.DIP) load("./paper_data/DIPs.RData") else load("./data/DIPs.RData")
+  
 
 dir.create("./plot/Figure1", showWarnings = FALSE)
 
@@ -312,9 +314,10 @@ qcut=0.2
 Rcut=0.5
 
 
-  pdf("./plot/Figure1/Fig1_G.pdf")
+pdf("./plot/Figure1/Fig1_G.pdf"){
   phi.full=NULL
   pho=NULL
+  #One density plot per tissue
   for(name in names(OUT)){
     out=OUT[[name]]
     full=out$data.fit
@@ -339,6 +342,7 @@ Rcut=0.5
     phi.df$tissue=name
     phi.full=rbind(phi.full, phi.df)
   }
+  #One density plot per group of tissues
   for(i in nmz){ 
     ct=which(full_col$Class==i)
     tbt=NULL
@@ -349,59 +353,21 @@ Rcut=0.5
       labs(x="time of day", y="density", title=i)+theme(legend.position = "none", text = element_text(size=sz))
     print(ppt)
   }
-  
+  #All tissues together
   ppt=ggplot(phi.full)+geom_line(aes(x=hour,y=dens,colour=tissue), size=th)+coord_polar()+scale_x_continuous(breaks=seq(0, 24, by=4),expand=c(0,0), lim=c(0, 24))+ylim(0,NA)+
     theme_minimal()+labs(x="time of day", y="density", title="All Tissues")+scale_color_manual(values=colorandum[names(OUT)])+
     theme(legend.position = "none", text = element_text(size=sz))
   print(ppt)
   dev.off()
-
+}
 
 val="R"
 all=NULL
 tbt=NULL
 
 
-pdf("./plot/Figure1/Fig1_H.pdf")
-for(j in names(OUT)){
-  out=OUT[[j]]
-  fit=out$data.fit
-  inf.phi=out$phi
-  exprx=out$E
-  gene.list=gsub("\\|.*$","",gsub("^.*_", "",fit$genes))
-  clock.coord=sapply(out$geni,function(x){match(x, gene.list)})
-  clock.coord=clock.coord[!is.na(clock.coord)]
-  full=fit[,c("amp","a","b","R2", "genes","qval", "pval")]
-  full=subset(full, pval<pcut)
-  full=subset(full, qval<qcut)
-  full$R=2*sqrt(full$a^2+full$b^2)
-  full=subset(full, R>Rcut)
-  if(nrow(full)>1){
-    full$kind=names(OUT)[j]
-    all=rbind(all,full)
-    breaks = seq(0, max(max(full[,val]),1), by=0.01) 
-    if(val!="R") breaks=breaks^11
-    amp.cut = cut(full[,val], breaks, right=FALSE) 
-    freq.cut = table(amp.cut) 
-    if(val=="R") freq.cut = rev(freq.cut) 
-    cumsum.frq=c(cumsum(freq.cut),nrow(full[,val]))+1
-    tbz=tibble(R=breaks[-1], n.genes=cumsum.frq, kind=j)
-    if(val=="R") tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=j)
-    tbt=rbind(tbt,tbz)
-  }
-}
-if(!is.null(tbt)){
-  if (val=="R") print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind), size=th)+scale_y_log10(limits=c(1,2500))+
-                        labs(title="All tissues",y="# of genes", x="log2(peak to trough)", color="Category")+theme_minimal()+
-                        scale_color_manual(values=colorandum[unique(tbt$kind)])+theme(legend.position = "none",text = element_text(size=sz)))
-  else print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind), size=th)+scale_y_log10()+scale_x_continuous(trans=reverselog_trans(10))+
-               labs(title="All tissues",y="# of genes", x=val)+theme_minimal()+scale_color_manual(values=colorandum[unique(tbt$kind)])+
-               theme(legend.position = "none",text = element_text(size=sz)))
-}
-for(i in nmz){ 
-  ct=which(full_col$Class==i)
-  tbt=NULL
-  for(j in full_col$`Full name`[ct]){
+pdf("./plot/Figure1/Fig1_H.pdf"){
+  for(j in names(OUT)){
     out=OUT[[j]]
     fit=out$data.fit
     inf.phi=out$phi
@@ -410,7 +376,6 @@ for(i in nmz){
     clock.coord=sapply(out$geni,function(x){match(x, gene.list)})
     clock.coord=clock.coord[!is.na(clock.coord)]
     full=fit[,c("amp","a","b","R2", "genes","qval", "pval")]
-    if (val=="R") {full=subset(full, pval<pcut)}
     full=subset(full, pval<pcut)
     full=subset(full, qval<qcut)
     full$R=2*sqrt(full$a^2+full$b^2)
@@ -419,7 +384,7 @@ for(i in nmz){
       full$kind=names(OUT)[j]
       all=rbind(all,full)
       breaks = seq(0, max(max(full[,val]),1), by=0.01) 
-      if(val!="R") breaks=breaks^11 
+      if(val!="R") breaks=breaks^11
       amp.cut = cut(full[,val], breaks, right=FALSE) 
       freq.cut = table(amp.cut) 
       if(val=="R") freq.cut = rev(freq.cut) 
@@ -429,29 +394,71 @@ for(i in nmz){
       tbt=rbind(tbt,tbz)
     }
   }
+  #Cumulative plots for all tissues
   if(!is.null(tbt)){
-    if(val=="R") print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
-                         scale_y_log10(limits=c(1,2500))+labs(title=i,y="# of genes", x="log2(peak to trough)",  color="Category", linetype="Category")+
-                         theme_minimal()+scale_color_manual(values=colorandum[unique(tbt$kind)])+
-                         theme(text = element_text(size=sz), legend.position = "none"))
-    else print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
-                 scale_y_log10()+scale_x_continuous(trans=reverselog_trans(10))+labs(title=i,y="# of genes", x=val)+
-                 theme_minimal()+scale_color_manual(values=colorandum[unique(tbt$kind)])+theme(text = element_text(size=sz), legend.position = "top"))
+    if (val=="R") print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind), size=th)+scale_y_log10(limits=c(1,2500))+
+                          labs(title="All tissues",y="# of genes", x="log2(peak to trough)", color="Category")+theme_minimal()+
+                          scale_color_manual(values=colorandum[unique(tbt$kind)])+theme(legend.position = "none",text = element_text(size=sz)))
+    else print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind), size=th)+scale_y_log10()+scale_x_continuous(trans=reverselog_trans(10))+
+                 labs(title="All tissues",y="# of genes", x=val)+theme_minimal()+scale_color_manual(values=colorandum[unique(tbt$kind)])+
+                 theme(legend.position = "none",text = element_text(size=sz)))
   }
+  #Cumulative plots for groups of tissues
+  for(i in nmz){ 
+    ct=which(full_col$Class==i)
+    tbt=NULL
+    for(j in full_col$`Full name`[ct]){
+      out=OUT[[j]]
+      fit=out$data.fit
+      inf.phi=out$phi
+      exprx=out$E
+      gene.list=gsub("\\|.*$","",gsub("^.*_", "",fit$genes))
+      clock.coord=sapply(out$geni,function(x){match(x, gene.list)})
+      clock.coord=clock.coord[!is.na(clock.coord)]
+      full=fit[,c("amp","a","b","R2", "genes","qval", "pval")]
+      if (val=="R") {full=subset(full, pval<pcut)}
+      full=subset(full, pval<pcut)
+      full=subset(full, qval<qcut)
+      full$R=2*sqrt(full$a^2+full$b^2)
+      full=subset(full, R>Rcut)
+      if(nrow(full)>1){
+        full$kind=names(OUT)[j]
+        all=rbind(all,full)
+        breaks = seq(0, max(max(full[,val]),1), by=0.01) 
+        if(val!="R") breaks=breaks^11 
+        amp.cut = cut(full[,val], breaks, right=FALSE) 
+        freq.cut = table(amp.cut) 
+        if(val=="R") freq.cut = rev(freq.cut) 
+        cumsum.frq=c(cumsum(freq.cut),nrow(full[,val]))+1
+        tbz=tibble(R=breaks[-1], n.genes=cumsum.frq, kind=j)
+        if(val=="R") tbz=tibble(R=rev(breaks[-1]), n.genes=cumsum.frq, kind=j)
+        tbt=rbind(tbt,tbz)
+      }
+    }
+    if(!is.null(tbt)){
+      if(val=="R") print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
+                           scale_y_log10(limits=c(1,2500))+labs(title=i,y="# of genes", x="log2(peak to trough)",  color="Category", linetype="Category")+
+                           theme_minimal()+scale_color_manual(values=colorandum[unique(tbt$kind)])+
+                           theme(text = element_text(size=sz), legend.position = "none"))
+      else print(ggplot(tbt)+geom_line(aes(x=R,y=n.genes, color=kind, linetype=kind), size=th)+
+                   scale_y_log10()+scale_x_continuous(trans=reverselog_trans(10))+labs(title=i,y="# of genes", x=val)+
+                   theme_minimal()+scale_color_manual(values=colorandum[unique(tbt$kind)])+theme(text = element_text(size=sz), legend.position = "top"))
+    }
+  }
+  dev.off()
 }
-dev.off()
 
-
+#Plot the SVD of interesting gene groups
 lb=6
 pt=3
 sz=18
 gene_inf=get(load("./paper_data/CGRs.RData"))
 HSF1_genes=get(load("./paper_data/HSF1_g.RData"))
 {
-  Plot_cSVD(OUT, gene_inf, full_col,loc ="./plot/Figure1/Fig1_B" , CT=15, dot_size =pt, label_size = lb, text_size = sz)
-  Plot_cSVD(OUT, HSF1_genes, full_col,loc ="./plot/Figure1/Fig1_D" , CT=5, dot_size =pt, label_size = lb, text_size = sz, ymax=0.6)
+  Plot_cSVD(OUT, gene_inf, full_col,loc ="./plot/Figure1/Fig1_B.pdf" , CT=15, dot_size =pt, label_size = lb, text_size = sz)
+  Plot_cSVD(OUT, HSF1_genes, full_col,loc ="./plot/Figure1/Fig1_D.pdf" , CT=5, dot_size =pt, label_size = lb, text_size = sz, ymax=0.6)
 }
-
+#Plot the various profiles
 {
   pdf("./plot/Figure1/Fig1_C.pdf")
   tissuex=c("Brain - Cortex", "Adipose - Visceral (Omentum)")

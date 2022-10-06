@@ -1,8 +1,17 @@
+rm(list=ls())
+gc()
+### Libraries ###
 source("./nconds_functions.R")
 source("./nconds.R")
-library('lmtest')
+list.of.packages <- c("lmtest", "data.table", "parallel", "combinat")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) BiocManager::install(new.packages, force=TRUE)
+library(lmtest)
+library(data.table)
+library(parallel)
+library(combinat)
 #### Functions ####
-
+#Divide E object by sex of donors
 split_E_sex<-function(E, samp){
   males=samp$sub.id[samp$SEX==1]
   females=samp$sub.id[samp$SEX==2]
@@ -27,7 +36,7 @@ split_E_sex<-function(E, samp){
   }
   return(A)
 }
-
+#Divide E object by age of donors
 split_E_age<-function(E, samp){
   males=samp$sub.id[samp$AGE>60]
   females=samp$sub.id[samp$AGE<50]
@@ -57,7 +66,7 @@ spliti= function(x, sp, nb){
   return(v)
 }
 
-# CPM to E
+# Reorganizes the CPM matrix into a list (E), removing unwanted tissues
 CPM_to_E<-function(CPM.all.norm, min.samp=24, sep=NULL, samp=NULL){
   E.matrix=list()
   if(length(which(startsWith(names(CPM.all.norm), "Cells")))>0) CPM.all.norm=CPM.all.norm[-which(startsWith(names(CPM.all.norm), "Cells"))]
@@ -77,11 +86,11 @@ CPM_to_E<-function(CPM.all.norm, min.samp=24, sep=NULL, samp=NULL){
           ml$E=E$E[,colnames(E$E) %in% male]
           ml$type="GTEX-male"
           ml$tissue=name
-          if(ncol(ml$E)>=min.samp){E.matrix[[paste(name, "Male", sep="-")]]=ml}
+          if(ncol(ml$E)>=min.samp){E.matrix[[paste(name, "MALE", sep="-")]]=ml}
           fm$E=E$E[,colnames(E$E) %in% female]
           fm$type="GTEX-female"
           fm$tissue=name
-          if(ncol(fm$E)>=min.samp){E.matrix[[paste(name, "Female", sep="-")]]=fm}
+          if(ncol(fm$E)>=min.samp){E.matrix[[paste(name, "FEMALE", sep="-")]]=fm}
         }
       }
     }
@@ -98,11 +107,11 @@ CPM_to_E<-function(CPM.all.norm, min.samp=24, sep=NULL, samp=NULL){
           ml$E=E$E[,colnames(E$E) %in% young]
           ml$type="GTEX-old"
           ml$tissue=name
-          if(ncol(ml$E)>=min.samp){E.matrix[[paste(name, "Young", sep="-")]]=ml}
+          if(ncol(ml$E)>=min.samp){E.matrix[[paste(name, "YOUNG", sep="-")]]=ml}
           fm$E=E$E[,colnames(E$E) %in% old]
           fm$type="GTEX-young"
           fm$tissue=name
-          if(ncol(fm$E)>=min.samp){E.matrix[[paste(name, "Old", sep="-")]]=fm}
+          if(ncol(fm$E)>=min.samp){E.matrix[[paste(name, "OLD", sep="-")]]=fm}
         }
       }
     }
@@ -123,7 +132,7 @@ CPM_to_E<-function(CPM.all.norm, min.samp=24, sep=NULL, samp=NULL){
   
   return(E.matrix)
 }
-
+#Create the OUT structured file from any CPM and set of phases
 Make_big_OUT<-function(E,phi){
   donors=names(phi)
   OUT=list()
@@ -141,7 +150,7 @@ Make_big_OUT<-function(E,phi){
   return(OUT)
 }
 
-#Fit each gene with Harmonic regression
+#Fit each gene with Harmonic regression in all tissues
 Fit_OUT<-function(OUT,period=24, NA5=T, N.cores){
   for(i in names(OUT)){ 
     E=OUT[[i]]$E
@@ -166,7 +175,7 @@ Fit_OUT<-function(OUT,period=24, NA5=T, N.cores){
   }
   return(OUT)
 }
-
+#Harmonic regression funcion
 harm_reg<-function(x, t, period){
   n=length(x)
   fit0=lm(x~1)
@@ -186,16 +195,25 @@ harm_reg<-function(x, t, period){
 ########
 
 #### Main ####
-N.cores = 18
-as.paper=FALSE
+if(!exists("N.cores")) N.cores = 18 
+if(!exists("as.paper")) as.paper=FALSE
+if(!exists("use.paper.DIP")) use.paper.DIP=FALSE
 
-samp <- fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt')
+if(!file.exists(file="./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")){ 
+  samp = fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt')
+  fwrite(samp, file = "./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")
+}else{
+  samp = fread("./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")
+}
 samp$sub.id=spliti(samp$SUBJID,"-",2)
 samp$AGE=as.numeric(spliti(samp$AGE,"-",1))+5
 
+#Crate appropriate age and sex dependent files for subsequent analysis
+#It's a bit slow but its normal
+
+if(use.paper.DIP)   phi=get(load("./paper_data/DIPs.RData")) else phi=get(load("./data/DIPs.RData"))
+
 if(!as.paper){
-  
-  phi=get(load("./data/DIPs.RData"))
   
   dat.raw=get(load("./data/CPM/CPM_full.RData"))
   CPM.all.norm.large = get(load("./data/CPM/CPM.all.norm_large.RData"))
@@ -216,7 +234,7 @@ if(!as.paper){
   OUT.age=Fit_OUT(OUT.age, N.cores = N.cores)
   
   save(OUT.age, file="./data/OUT/OUT_AGE.RData")
-  OUT.all=get(load("./paper_data/OUT_paper/OUT_ALL.RData"))
+  OUT.all=get(load("./data/OUT/OUT_ALL.RData"))
   
 }
 
@@ -225,18 +243,17 @@ if(as.paper){
   OUT.age=get(load("./paper_data/OUT_paper/OUT_AGE.RData"))
   OUT.all=get(load("./paper_data/OUT_paper/OUT_ALL.RData"))
   dat.raw=get(load("./paper_data/CPM_full.RData"))
-  phi=get(load("./paper_data/DIPs.RData"))
 }
 
 Meta=read.table("./paper_data/sample_metadata.txt", header=TRUE)
 
 qcut=0.2 # BH corrected p-value > 0.2
-Rcut=0.5 # log2 peak-to-trough > 0.5
+Rcut=0.5 # log2 peak trough > 0.5
 
 
 #####
-
-for(dv in c("MF", "age_n5")){
+#Create SS (SubSample) files and perform the model selection on all genes; then verify if the pass the qvalue and R treshold
+for(dv in c("MF", "AGE")){
   if(dv=="MF"){
     OUT= OUT.MF 
     MU=subset(Meta, mfSS==1)
@@ -249,7 +266,6 @@ for(dv in c("MF", "age_n5")){
   
   SS=list()
   for (tx in tix.c[duplicated(tix.c)]){
-    print(tx)
     MT=subset(MU, tissue==tx)
     MT$fullID=sapply(strsplit(as.character(unlist(MT$fullID)),".",fixed=TRUE),"[[",2)
     idx=which(tix.c==tx)

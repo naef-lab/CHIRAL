@@ -1,7 +1,12 @@
 #### Libraries ####
+if(!("BiocManager" %in% installed.packages()[,"Package"])) install.packages("BiocManager")
+list.of.packages <- c("edgeR", "data.table", "parallel", "R.utils")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) BiocManager::install(new.packages, force=TRUE)
 library(edgeR)
 library(data.table)
 library(parallel)
+library(R.utils)
 ########
 
 #### Functions #####
@@ -84,17 +89,23 @@ spliti= function(x, sp, nb){
 
 #### General variables ####
 
-your_path="/home/cgobet/CHIRAL/Paper/"
-N.cores = 18 # Number of core to paralellize the different pre-processing functions. Be sure to have enough RAM if you increase the number of cores used.
+if(!exists("your_path")) your_path=file.path(getwd(), "Paper")
+if(!exists("N.cores")) N.cores = 18  # Number of core to paralellize the different pre-processing functions. Be sure to have enough RAM if you increase the number of cores used.
 setwd(your_path)
 
 ########
 
 ##### Main ####
 
+# Create directories
+dir.create(file.path("./data"), showWarnings = FALSE)
+dir.create(file.path("./data/CPM"), showWarnings = FALSE)
+dir.create(file.path("./paper_data/raw"), showWarnings = FALSE)
+
 #Read raw rna-seq count data from the GTEX database
 if(!file.exists(file="./paper_data/raw/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct")){ 
   gtex = fread("https://storage.googleapis.com/gtex_analysis_v8/rna_seq_data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct.gz")
+  fwrite(gtex, file = "./paper_data/raw/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct")
 }else{
   gtex = fread("./paper_data/raw/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct")
 }
@@ -103,8 +114,19 @@ gtex=as.data.frame(gtex)
 names(gtex)=gsub("\\.","-", names(gtex))
 
 #Read metadata from the GTEX database
-samp = fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt')
+if(!file.exists(file="./paper_data/raw/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt")){ 
+  samp = fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt')
+  fwrite(samp, file = "./paper_data/raw/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt")
+}else{
+  samp = fread("./paper_data/raw/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt")
+}
 
+if(!file.exists(file="./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")){ 
+  samp2 = fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt')
+  fwrite(samp2, file = "./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")
+}else{
+  samp2 = fread("./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")
+}
 #get sample position for each tissue
 gtex.tissue=samp[match(colnames(gtex),samp$SAMPID),'SMTSD']
 tiss=unique(gtex.tissue)
@@ -116,15 +138,12 @@ names(tiss)=tiss
 #Filter read count and normalize by library size, log transform, tissue-by-tissue
 CPM.all= mclapply(tiss, run_edgeR, mc.cores = N.cores)
 
-dir.create(file.path("./data"), showWarnings = FALSE)
-dir.create(file.path("./data/CPM"), showWarnings = FALSE)
-
 save(CPM.all, file = "./data/CPM/CPM_full.RData")
 
 #Filter samples based on RNA quality, sequencing depth, mapping quality and then remove covariates (bias removal). 
 # The fit residuals are used to infer TIP and DIP.
 meta.1 = samp
-meta.2 <- fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt')
+meta.2 = samp2
 
 CPM.all.norm=Norm.CPM(CPM.all, high_filter=TRUE, ncores=N.cores, meta.1, meta.2)
 

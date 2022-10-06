@@ -1,17 +1,22 @@
 rm(list=ls())
+gc()
 #### Libraries ####
+list.of.packages <- c("lmtest", "ggplot2")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) BiocManager::install(new.packages, force=TRUE)
+if(!("CHIRAL" %in% installed.packages()[,"Package"])) devtools::install_github("/naef-lab/CHIRAL/tree/master/Pkg/CHIRAL")
 library(CHIRAL)
 library(lmtest)
 library(ggplot2)
 #####
- 
+
 ##### Functions ####
 spliti= function(x, sp, nb){
   v=sapply(strsplit(x,sp),"[[",nb)
   return(v)
 }
 
-# CPM to E
+# Reorganizes the CPM matrix into a list (E), removing unwanted tissues
 CPM_to_E<-function(CPM.all.norm, min.samp=24, sep=NULL, samp=NULL){
   E.matrix=list()
   if(length(which(startsWith(names(CPM.all.norm), "Cells")))>0) CPM.all.norm=CPM.all.norm[-which(startsWith(names(CPM.all.norm), "Cells"))]
@@ -78,7 +83,7 @@ CPM_to_E<-function(CPM.all.norm, min.samp=24, sep=NULL, samp=NULL){
   return(E.matrix)
 }
 
-#infer with CHIRAL 
+#parallaelized inference of the TIPs across tissues
 infer_l=function(k,clockgenes=NULL){
   tix=k$tissue
   tp=k$type
@@ -106,7 +111,7 @@ harm_reg<-function(x, t, period){
   return(c(pval=p.val,phase=phase,amp=amp,mu=mu,a=a,b=b, period=period, R2=summary(fit1)$r.squared))
 }
 
-#Fit each gene with Harmonic regression
+#Fit each gene with Harmonic regression in all tissues
 Fit_OUT<-function(OUT,period=24, NA5=T, N.cores){
   for(i in names(OUT)){ 
     E=OUT[[i]]$E
@@ -132,11 +137,11 @@ Fit_OUT<-function(OUT,period=24, NA5=T, N.cores){
   return(OUT)
 }
 
-
+#Break inveriances intrinic of the method
 Set_OUT<-function(OUT){
   for(i in names(OUT)){
     out=OUT[[i]]
-    out=order.out.setgene.hc(out) #to ser per3 at 9
+    out=order.out.setgene.hc(out)
     sampz=gsub("\\..*$","", gsub("GTEX.","", colnames(out$E)))
     colnames(out$E)=sampz
     names(out$phi)=sampz
@@ -144,7 +149,7 @@ Set_OUT<-function(OUT){
   }
   return(OUT)
 }
-
+#Break the rotational inveriance
 order.out.setgene.hc<-function(out,gene="PER3"){
   out$has.been.flipped=0
   d.fit=out[["data.fit"]]
@@ -166,6 +171,7 @@ order.out.setgene.hc<-function(out,gene="PER3"){
   return(out)
 }
 
+#Find the unique donors for the GTEx
 Unique_donors<-function(OUT){
   all_people=NULL
   for(i in names(OUT)){
@@ -175,6 +181,8 @@ Unique_donors<-function(OUT){
   people=unique(all_people)
   return(people)
 }
+
+#Break the time direction invariance using human muscle refence
 order.from.hc.ref<-function(x){
   sx=x
   #hard coded reference
@@ -195,6 +203,7 @@ order.from.hc.ref<-function(x){
   return(Conj(sx))
 }
 
+#Set all the TIPs in a matrix
 Create_phi_matrix<-function(OUT, people){
   tix.study=names(OUT)
   phi_mat=matrix(nrow = length(people), ncol= length(names(OUT)))
@@ -208,7 +217,7 @@ Create_phi_matrix<-function(OUT, people){
   return(phi_study)
 }
 
-
+#Infer the DIPs for the matrix of TIPs
 Phi.from.phi_mat<-function(phi.study, return.all=TRUE, min.tix=1, ct=1.95){
   phi.study=phi.study[rowSums(!is.na(phi.study))>=min.tix,]
   phi.comp=phi.study
@@ -242,6 +251,7 @@ Phi.from.phi_mat<-function(phi.study, return.all=TRUE, min.tix=1, ct=1.95){
   return(phi)
 }
 
+#Create the OUT structured file from any CPM and set of phases
 Make_big_OUT<-function(E,phi){
   donors=names(phi)
   OUT=list()
@@ -262,11 +272,19 @@ Make_big_OUT<-function(E,phi){
 
 #### Main ####
 
-N.cores = 18 
-dir.create(file.path("./data/OUT"), showWarnings = FALSE)
-as.paper=FALSE
 
-samp <- fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt')
+if(!exists("N.cores")) N.cores = 18 
+if(!exists("as.paper")) as.paper=FALSE
+if(!exists("use.paper.DIP")) use.paper.DIP=FALSE
+
+
+dir.create(file.path("./data/OUT"), showWarnings = FALSE)
+if(!file.exists(file="./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")){ 
+  samp = fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt')
+  fwrite(samp, file = "./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")
+}else{
+  samp = fread("./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")
+}
 samp$sub.id=spliti(samp$SUBJID,"-",2)
 samp$AGE=as.numeric(spliti(samp$AGE,"-",1))+5
 
@@ -303,7 +321,7 @@ qplot(phi_paper[ii],phi[ii])
 
 E=CPM_to_E(CPM.all.norm.large)
 
-if(as.paper){phi=phi_paper}
+if(use.paper.DIP){phi=phi_paper}
 
 OUT=Make_big_OUT(E, phi)
 
