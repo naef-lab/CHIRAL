@@ -1,53 +1,62 @@
 # Sex-dimorphic and age-dependent organization of 24 hour gene expression rhythms in human
-In order to reproduce the figures and analysis of the paper follow the instruction following.
+In order to reproduce the figures and analysis of the paper, follow the instructions below.
 
-### Scripts and packages
-Clone this github repository
+### Repository and packages
+Clone this github repository:
 
-Install the `CHIRAL` package from https://github.com/naef-lab/CHIRAL/tree/master/Pkg/CHIRAL
+```
+git clone https://github.com/naef-lab/CHIRAL
+```
+Install the `CHIRAL` package: 
+
+```
+install.packages("devtools");
+devtools::install_github("naef-lab/CHIRAL/Pkg/Chiral")
+
+```
 
 ### Data
-Download the external data to use pre-computed files
-Visit https://doi.org/10.5281/zenodo.6637875 and 
-Download the folders "OUT_paper" and "CPM". 
-Copy that folder into the "Paper/paper_data" folder 
-Make sure to set your working directory such that "./paper_data/OUT_paper/" and "./paper_data/CPM/" exists and are readable.
+1. Download the external data to use pre-computed files.
+2. Visit https://doi.org/10.5281/zenodo.6637875 and download the folders "OUT_paper" and "CPM". 
+3. Copy those folders into "Paper/paper_data". 
+4. Make sure to set your working directory such that `./paper_data/OUT_paper/` and `./paper_data/CPM/` exist and are readable.
 
 ### Set the working directory in the "wherever/you/cloned/Paper" folder
 
 ## Running the code
 
-You can run the Main.R file or run the single scripts in the following order:
+Check that `your_path` is correctly defined. Set `N.cores`, `as.paper`, and `use.paper.DIP` to fit your needs. Run the `Main.R` file which will perform the full analysis from scratch and reproduce the main figures of the paper :
 
-To_CPM.R
+```
+Rscript Main.R
+```
 
-DIP_inf.R
-
-Model_selection.R
-
-Fig_1.R
-
-Fig_2-3.R
-
-Complex_heatmaps.R
-
+In a more control way, you can run each script individually with the following order:
+```
+Rscript To_CPM.R
+Rscript DIP_inf.R
+Rscript Model_selection.R
+Rscript Fig_1.R
+Rscript Fig_2-3.R
+Rscript Complex_heatmaps.R
+```
 ## Debugging
 
-The code has been tested on a clean installation of R and should smoothly run; however, it required  restart of the R session for the installation of some packages.
+The code has been tested on a clean installation of R. It might require a restart of the R session for the installation of some packages.
 
 ## Reproducibility
 
-There is in the code the as.paper variable set to TRUE by default.
-This variable  controls if you load the pre computed data or use the ones you generate.
-Note that there is both stochasticity and possible numerical errors, so if this parameter is set to FALSE the figures and findings might differ, although very very slightly, from what is shown in the paper.
+The `as.paper` variable is set to `TRUE` by default.
+This variable  controls if you load the pre-computed data or use the ones that you will generate.
+Note that there is stochasticity in the TIP inference. If this parameter is set to `FALSE`, the figures might slightly different from what is shown in the paper.
 
 ### Helper functions
 
-Please also find all the functions used to obtain the results.
+Find all the functions used to obtain the results.
 
 # Licence 
 
-The eintierty of these files and scripts are under the CC BY-NC license.
+The entirety of these files and scripts are under the CC BY-NC license.
 
 If you are unsure how to use products under creative commons license please visit https://creativecommons.org/licenses/
 
