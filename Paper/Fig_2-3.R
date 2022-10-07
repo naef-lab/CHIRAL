@@ -570,8 +570,8 @@ colorandum=full_col$`# color`
 names(colorandum)=full_col$`Full name`
 nmz=unique(full_col$Class)
 
-dir.create("./Figure2", showWarnings = FALSE)
-dir.create("./Figure3", showWarnings = FALSE)
+dir.create("./plot/Figure2", showWarnings = FALSE)
+dir.create("./plot/Figure3", showWarnings = FALSE)
 
 phenot=get(load("./paper_data/phenotypes.RData"))
 
@@ -601,17 +601,17 @@ for (div in c("MF", "AGE")){
   if(div=="MF") {
     OUT= OUT.MF
     SS=SS.MF
-    pthb="./Figure2/Fig2_D.pdf"
-    pthc="./Figure2/Fig2_C-F-I.pdf"
-    pthd="./Figure2/Fig2_B-E-H.pdf"
+    pthb="./plot/Figure2/Fig2_D.pdf"
+    pthc="./plot/Figure2/Fig2_C-F-I.pdf"
+    pthd="./plot/Figure2/Fig2_B-E-H.pdf"
     
   }
   if(div=="AGE"){
     OUT= OUT.age
     SS=SS.age
-    pthb="./Figure3/Fig3_D.pdf"
-    pthc="./Figure3/Fig3_B-F-I.pdf"
-    pthd="./Figure3/Fig3_C-E-H.pdf"
+    pthb="./plot/Figure3/Fig3_D.pdf"
+    pthc="./plot/Figure3/Fig3_B-F-I.pdf"
+    pthd="./plot/Figure3/Fig3_C-E-H.pdf"
   } 
   Plot_MS_barplot(SS=SS, div=div, pth=pthb)
   
@@ -619,62 +619,7 @@ for (div in c("MF", "AGE")){
   
   Plot_MS_density(OUT=OUT, SS=SS, phi=phi, phenot=phenot, MS=MS, div=div, pth=pthd, strict=strict, qcut=qcut, size=size, th=th)
   
- 
 }
-
-######### Barplot MS ########
-
-for (div in c("MF", "AGE")) {
-
-  model_gn=tibble()
-  totz=tibble()
-  for(j in names(SS)){
-    tmg=tibble(tissue=j,genes=0, scaled=0, model=0)
-    ss=SS[[j]]
-    tot=0
-    for (mds in c(2:5)) {
-      sg=rownames(ss)[which(ss$model.c %in% mds)]
-      tot=tot+length(sg)
-    }
-    for (mds in c(2:5)) {
-      sg=rownames(ss)[which(ss$model.c %in% mds)]
-      tmg[2]=length(sg)
-      tmg[3]=tmg[2]/tot
-      tmg[4]=mds
-      model_gn=rbind(model_gn, tmg)
-    }
-    tut=tibble(tissue=j,genes=tot)
-    totz=rbind(totz, tut)
-  }
-  hjst=1
-  ang=90
-  model_gn$model=factor(model_gn$model, c(5,4,3,2))
-  model2=model_gn[model_gn$model==2,]
-  totuz=totz$tissue[base::order(totz$genes)]
-  totz$tissue=factor(totz$tissue,totuz)
-  model_gn$tissue=factor(model_gn$tissue,totuz)
-  #p1=
-  filz=c(colroma$hex[c(50,100,150,200)])
-  p1=ggplot(model_gn, aes(x=tissue, y=scaled,fill = as.factor(model)))+geom_bar(stat="identity")+
-    scale_fill_manual(values=filz,name="Model")+theme_void()+
-    theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15))+
-    labs(x="Tissue", y="Relative fraction of genes in each model")
-  
-  if(div=="MF") ggsave( filename= "./Figure2/Fig2_D1.pdf",p1,width = 12, height = 10)
-  if(div=="AGE") ggsave( filename= "./Figure2/Fig3_D1.pdf",p1,width = 12, height = 10)    
-  
-  p2=ggplot(totz, aes(x=tissue, y=genes))+geom_bar(stat="identity", fill = colroma$hex[250])+
-    theme_minimal()+theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15),panel.grid.minor = element_blank(),panel.grid.major = element_blank())+
-    labs(x="Tissue", y="total number of genes in models 2 to 5")+theme(axis.title.x = element_blank(), axis.text.x = element_blank())
-  
-  l = structure(list(p1, p2), class=c("gglist", "ggplot"))
-  print.gglist = function(x, ...) l_ply(x, print.ggplot, ...)
-  ggsave(l, file=pth, width = 12, height = 10)
-  
-  if(div=="MF") ggsave( filename= "./Figure2/Fig2_D2.pdf",p2,width = 12, height = 10)
-  if(div=="AGE") ggsave( filename= "./Figure3/Fig3_D2.pdf",p2,width = 12, height = 10) 
-}
-
 ####### cSVD ######
 
 lb=6
@@ -683,10 +628,10 @@ sz=18
 for (div in c("MF", "AGE")){
   if(div=="MF") {
     OUT= OUT.MF
-    Plot_cSVD(OUT, gene_inf, full_col,loc =file.path(wd, "Figure2/Fig2_A") , CT=15, dot_size =pt, label_size = lb, text_size = sz)
+    Plot_cSVD(OUT, gene_inf, full_col,loc ="./plot/Figure2/Fig2_A" , CT=15, dot_size =pt, label_size = lb, text_size = sz)
   }
   if(div=="AGE") {
     OUT= OUT.age
-    Plot_cSVD(OUT, gene_inf, full_col,loc =file.path(wd, "Figure3/Fig3_A") , CT=15, dot_size =pt, label_size = lb, text_size = sz)
+    Plot_cSVD(OUT, gene_inf, full_col,loc ="./plot/Figure3/Fig3_A" , CT=15, dot_size =pt, label_size = lb, text_size = sz)
   }
 }
