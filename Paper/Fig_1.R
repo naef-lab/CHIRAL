@@ -1,7 +1,7 @@
 rm(list=ls())
 gc()
 #### Libraries ####
-list.of.packages <- c("vroom", "tibble", "gridExtra", "ggrepel")
+list.of.packages <- c("vroom","ggplot2", "tibble", "gridExtra", "ggrepel")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) BiocManager::install(new.packages, force=TRUE)
 library(vroom)

@@ -1,6 +1,9 @@
 rm(list=ls())
 gc()
 ### Libraries ###
+list.of.packages <- c("vroom", "ggplot2")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) BiocManager::install(new.packages, force=TRUE)
 library(vroom)
 library(ggplot2)
 ### Functions ###
@@ -87,7 +90,8 @@ Plot_cSVD<-function(input, genes, full_col=NULL,loc=NULL, ENSG=F, ncomp=NULL, CT
   dev.off()
 }
 
-Plot_MS_cumulative<-function(OUT, MS=T, div="MF", val="R", pth=NULL, strict=F, qcut=0.2, size=20, th=1){
+#Plots cumulative distribution of genes whose rhythms are validated by model selection
+Plot_MS_cumulative<-function(OUT, SS, MS=T, div="MF", val="R", pth=NULL, strict=F, qcut=0.2, size=20, th=1){
   pox=unique(gsub("^.*-", "", names(OUT)))
   nn=names(OUT)[duplicated(gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", names(OUT))))))]
   nn=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", nn))))
@@ -109,8 +113,6 @@ Plot_MS_cumulative<-function(OUT, MS=T, div="MF", val="R", pth=NULL, strict=F, q
       out=OUT[[j]]
       fit=out$data.fit
       jj=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", j))))
-      if(div=="MF"){SS=SS.MF}
-      else{SS=SS.age}
       md=l=gsub("^.*-", "", j)
       if(strict==FALSE){
         if(md %in% c("OLD", "FEMALE")){mds=c(3,4,5)}
@@ -169,8 +171,6 @@ Plot_MS_cumulative<-function(OUT, MS=T, div="MF", val="R", pth=NULL, strict=F, q
           out=OUT[[j]]
           fit=out$data.fit
           jj=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", j))))
-          if(div=="MF"){SS=SS.MF}
-          else{SS=SS.age}
           md=gsub("^.*-", "", j)
           if(strict==FALSE){
             if(md %in% c("OLD", "FEMALE")){mds=c(3,4,5)}
@@ -226,8 +226,6 @@ Plot_MS_cumulative<-function(OUT, MS=T, div="MF", val="R", pth=NULL, strict=F, q
       out=OUT[[j]]
       fit=out$data.fit
       jj=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", j))))
-      if(div=="MF"){SS=SS.MF}
-      else{SS=SS.age}
       md=l=gsub("^.*-", "", j)
       if(strict==FALSE){
         if(md %in% c("OLD", "FEMALE")){mds=c(3,4,5)}
@@ -275,7 +273,8 @@ Plot_MS_cumulative<-function(OUT, MS=T, div="MF", val="R", pth=NULL, strict=F, q
   dev.off()
 }
 
-Plot_MS_density<-function(OUT, phi, phenot, MS=T, div="MF", pth=NULL, strict=F, qcut=0.2, size=20, th=1){
+#Plots the densities according to the model selection parameters
+Plot_MS_density<-function(OUT, SS, phi, phenot, MS=T, div="MF", pth=NULL, strict=F, qcut=0.2, size=20, th=1){
   
   full_gene_phi=NULL
   if(is.null(pth)){
@@ -339,9 +338,7 @@ Plot_MS_density<-function(OUT, phi, phenot, MS=T, div="MF", pth=NULL, strict=F, 
   }
   phi.full=NULL
   phi.dfff=NULL
-  gen.names=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", names(OUT)))))
-  if(div=="MF"){SS=SS.MF}
-  else{SS=SS.age}
+  gen.names=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", names(SS)))))
   for(name in unique(gen.names)){
     idx=which(startsWith(names(OUT), name))
     phi.dff=NULL
@@ -480,6 +477,53 @@ Plot_MS_density<-function(OUT, phi, phenot, MS=T, div="MF", pth=NULL, strict=F, 
   dev.off()
 }
 
+#Plots the cumulative barplot and the relative split between models
+Plot_MS_barplot<-function(SS, div, pth=NULL){
+  if(is.null(pth)){
+    if(div=="MF") pth= "./Figure2/Fig2_D.pdf"
+    if(div=="AGE") pth= "./Figure3/Fig3_D.pdf"
+  }
+  model_gn=tibble()
+  totz=tibble()
+  for(j in names(SS)){
+    tmg=tibble(tissue=j,genes=0, scaled=0, model=0)
+    ss=SS[[j]]
+    tot=0
+    for (mds in c(2:5)) {
+      sg=rownames(ss)[which(ss$model.c %in% mds)]
+      tot=tot+length(sg)
+    }
+    for (mds in c(2:5)) {
+      sg=rownames(ss)[which(ss$model.c %in% mds)]
+      tmg[2]=length(sg)
+      tmg[3]=tmg[2]/tot
+      tmg[4]=mds
+      model_gn=rbind(model_gn, tmg)
+    }
+    tut=tibble(tissue=j,genes=tot)
+    totz=rbind(totz, tut)
+  }
+  hjst=1
+  ang=90
+  model_gn$model=factor(model_gn$model, c(5,4,3,2))
+  model2=model_gn[model_gn$model==2,]
+  totuz=totz$tissue[base::order(totz$genes)]
+  totz$tissue=factor(totz$tissue,totuz)
+  model_gn$tissue=factor(model_gn$tissue,totuz)
+  filz=c(colroma$hex[c(50,100,150,200)])
+  p1=ggplot(model_gn, aes(x=tissue, y=scaled,fill = as.factor(model)))+geom_bar(stat="identity")+
+    scale_fill_manual(values=filz,name="Model")+theme_void()+
+    theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15))+
+    labs(x="Tissue", y="Relative fraction of genes in each model")
+  
+  ggsave(filename= gsub(".pdf", "1.pdf", pth),p1,width = 12, height = 10)    
+  
+  p2=ggplot(totz, aes(x=tissue, y=genes))+geom_bar(stat="identity", fill = colroma$hex[250])+
+    theme_minimal()+theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15),panel.grid.minor = element_blank(),panel.grid.major = element_blank())+
+    labs(x="Tissue", y="total number of genes in models 2 to 5")+theme(axis.title.x = element_blank(), axis.text.x = element_blank())
+  
+  ggsave(filename= gsub(".pdf", "2.pdf", pth),p2,width = 12, height = 10)     
+}
 
 ### Main ###
 if(!file.exists(file="./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")){ 
@@ -538,101 +582,111 @@ phenot=get(load("./paper_data/phenotypes.RData"))
 
 
 #MS: use model selection
-MS=T
+if(!exists("MS")) MS=T
 #Plot parameters
-sz=20
-th=1
+if(!exists("sz")) sz=20
+if(!exists("th")) th=1
 #q-value cut. Note that any qcut>0.2 has no bearing if MS==T
-qcut=0.2
+if(!exists("qcut")) qcut=0.2
 #Parameter to determine if using genes only rhythmic in condition X or genes also rhythmic in condition X
-strict=F
+if(!exists("strict")) strict=F
 #Value for the cumulative plots, possible values:
 #"R": amplitude
 #"pval": p-value
 #"qval": q-value
 
-val="R"
-
-
-Plot_MS_densities(OUT=OUT.MF, MS=T, div="MF", val="R", pth=NULL, strict=F, qcut=0.2, size=20, th=1)
+if(!exists("val")) val="R"
 
 for (div in c("MF", "AGE")){
   if(div=="MF") {
     OUT= OUT.MF
+    SS=SS.MF
+    pthb="./Figure2/Fig2_D.pdf"
     pthc="./Figure2/Fig2_C-F-I.pdf"
-    pthb="./Figure2/Fig2_B-E-H.pdf"
+    pthd="./Figure2/Fig2_B-E-H.pdf"
+    
   }
   if(div=="AGE"){
     OUT= OUT.age
+    SS=SS.age
+    pthb="./Figure3/Fig3_D.pdf"
     pthc="./Figure3/Fig3_B-F-I.pdf"
-    pthb="./Figure2/Fig2_C-E-H.pdf"
+    pthd="./Figure3/Fig3_C-E-H.pdf"
   } 
-  Plot_MS_cumulative(OUT=OUT, MS=MS, div=div, val=val, pth=pthc, strict=strict, qcut=qcut, size=size, th=th)
+  Plot_MS_barplot(SS=SS, div=div, pth=pthb)
   
-  Plot_MS_density(OUT=OUT, phi=phi, phenot=phenot, MS=MS, div=div, pth=pthd, strict=strict, qcut=qcut, size=size, th=th)
+  Plot_MS_cumulative(OUT=OUT, SS=SS, MS=MS, div=div, val=val, pth=pthc, strict=strict, qcut=qcut, size=size, th=th)
+  
+  Plot_MS_density(OUT=OUT, SS=SS, phi=phi, phenot=phenot, MS=MS, div=div, pth=pthd, strict=strict, qcut=qcut, size=size, th=th)
+  
+ 
 }
 
 ######### Barplot MS ########
-  
-  for (div in c("MF", "AGE")) {
-    if(div== "MF") SS=SS.MF
-    if(div=="AGE") SS=SS.age
-    model_gn=tibble()
-    totz=tibble()
-    for(j in names(SS)){
-      tmg=tibble(tissue=j,genes=0, scaled=0, model=0)
-      ss=SS[[j]]
-      tot=0
-      for (mds in c(2:5)) {
-        sg=rownames(ss)[which(ss$model.c %in% mds)]
-        tot=tot+length(sg)
-      }
-      for (mds in c(2:5)) {
-        sg=rownames(ss)[which(ss$model.c %in% mds)]
-        tmg[2]=length(sg)
-        tmg[3]=tmg[2]/tot
-        tmg[4]=mds
-        model_gn=rbind(model_gn, tmg)
-      }
-      tut=tibble(tissue=j,genes=tot)
-      totz=rbind(totz, tut)
+
+for (div in c("MF", "AGE")) {
+
+  model_gn=tibble()
+  totz=tibble()
+  for(j in names(SS)){
+    tmg=tibble(tissue=j,genes=0, scaled=0, model=0)
+    ss=SS[[j]]
+    tot=0
+    for (mds in c(2:5)) {
+      sg=rownames(ss)[which(ss$model.c %in% mds)]
+      tot=tot+length(sg)
     }
-    hjst=1
-    ang=90
-    model_gn$model=factor(model_gn$model, c(5,4,3,2))
-    model2=model_gn[model_gn$model==2,]
-    totuz=totz$tissue[base::order(totz$genes)]
-    totz$tissue=factor(totz$tissue,totuz)
-    model_gn$tissue=factor(model_gn$tissue,totuz)
-    #p1=
-    filz=c(colroma$hex[c(50,100,150,200)])
-    p1=ggplot(model_gn, aes(x=tissue, y=scaled,fill = as.factor(model)))+geom_bar(stat="identity")+
-      scale_fill_manual(values=filz,name="Model")+theme_void()+
-      theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15))+
-      labs(x="Tissue", y="Relative fraction of genes in each model")
-    
-    if(div=="MF") ggsave( filename= "./Figure2/Fig2_D1.pdf",p1,width = 12, height = 10)
-    if(div=="AGE") ggsave( filename= "./Figure2/Fig3_D1.pdf",p1,width = 12, height = 10)    
-    
-    p2=ggplot(totz, aes(x=tissue, y=genes))+geom_bar(stat="identity", fill = colroma$hex[250])+
-      theme_minimal()+theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15),panel.grid.minor = element_blank(),panel.grid.major = element_blank())+
-      labs(x="Tissue", y="total number of genes in models 2 to 5")+theme(axis.title.x = element_blank(), axis.text.x = element_blank())
-    
-    if(div=="MF") ggsave( filename= "./Figure2/Fig2_D2.pdf",p2,width = 12, height = 10)
-    if(div=="AGE") ggsave( filename= "./Figure3/Fig3_D2.pdf",p2,width = 12, height = 10) 
+    for (mds in c(2:5)) {
+      sg=rownames(ss)[which(ss$model.c %in% mds)]
+      tmg[2]=length(sg)
+      tmg[3]=tmg[2]/tot
+      tmg[4]=mds
+      model_gn=rbind(model_gn, tmg)
+    }
+    tut=tibble(tissue=j,genes=tot)
+    totz=rbind(totz, tut)
   }
+  hjst=1
+  ang=90
+  model_gn$model=factor(model_gn$model, c(5,4,3,2))
+  model2=model_gn[model_gn$model==2,]
+  totuz=totz$tissue[base::order(totz$genes)]
+  totz$tissue=factor(totz$tissue,totuz)
+  model_gn$tissue=factor(model_gn$tissue,totuz)
+  #p1=
+  filz=c(colroma$hex[c(50,100,150,200)])
+  p1=ggplot(model_gn, aes(x=tissue, y=scaled,fill = as.factor(model)))+geom_bar(stat="identity")+
+    scale_fill_manual(values=filz,name="Model")+theme_void()+
+    theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15))+
+    labs(x="Tissue", y="Relative fraction of genes in each model")
   
-  lb=6
-  pt=3
-  sz=18
-  for (div in c("MF", "AGE")){
-    if(div=="MF") {
-      OUT= OUT.MF
-      Plot_cSVD(OUT, gene_inf, full_col,loc =file.path(wd, "Figure2/Fig2_A") , CT=15, dot_size =pt, label_size = lb, text_size = sz)
-    }
-    if(div=="AGE") {
-      OUT= OUT.age
-      Plot_cSVD(OUT, gene_inf, full_col,loc =file.path(wd, "Figure3/Fig3_A") , CT=15, dot_size =pt, label_size = lb, text_size = sz)
-    }
+  if(div=="MF") ggsave( filename= "./Figure2/Fig2_D1.pdf",p1,width = 12, height = 10)
+  if(div=="AGE") ggsave( filename= "./Figure2/Fig3_D1.pdf",p1,width = 12, height = 10)    
+  
+  p2=ggplot(totz, aes(x=tissue, y=genes))+geom_bar(stat="identity", fill = colroma$hex[250])+
+    theme_minimal()+theme(axis.text.x = element_text(angle = ang, hjust=hjst),text = element_text(size=15),panel.grid.minor = element_blank(),panel.grid.major = element_blank())+
+    labs(x="Tissue", y="total number of genes in models 2 to 5")+theme(axis.title.x = element_blank(), axis.text.x = element_blank())
+  
+  l = structure(list(p1, p2), class=c("gglist", "ggplot"))
+  print.gglist = function(x, ...) l_ply(x, print.ggplot, ...)
+  ggsave(l, file=pth, width = 12, height = 10)
+  
+  if(div=="MF") ggsave( filename= "./Figure2/Fig2_D2.pdf",p2,width = 12, height = 10)
+  if(div=="AGE") ggsave( filename= "./Figure3/Fig3_D2.pdf",p2,width = 12, height = 10) 
+}
+
+####### cSVD ######
+
+lb=6
+pt=3
+sz=18
+for (div in c("MF", "AGE")){
+  if(div=="MF") {
+    OUT= OUT.MF
+    Plot_cSVD(OUT, gene_inf, full_col,loc =file.path(wd, "Figure2/Fig2_A") , CT=15, dot_size =pt, label_size = lb, text_size = sz)
   }
-  
+  if(div=="AGE") {
+    OUT= OUT.age
+    Plot_cSVD(OUT, gene_inf, full_col,loc =file.path(wd, "Figure3/Fig3_A") , CT=15, dot_size =pt, label_size = lb, text_size = sz)
+  }
+}

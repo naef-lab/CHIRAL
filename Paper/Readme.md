@@ -11,12 +11,13 @@ Download the external data to use pre-computed files
 Visit https://doi.org/10.5281/zenodo.6637875 and 
 Download the folders "OUT_paper" and "CPM". 
 Copy that folder into the "Paper/paper_data" folder 
+Make sure to set your working directory such that "./paper_data/OUT_paper/" and "./paper_data/CPM/" exists and are readable.
 
 ### Set the working directory in the "wherever/you/cloned/Paper" folder
 
 ## Running the code
 
-You should run the scripts in the order:
+You can run the Main.R file or run the single scripts in the following order:
 
 To_CPM.R
 

@@ -1,14 +1,15 @@
 ############# Load packages  ###################
+list.of.packages <- c("colorRamps", "circlize",  "enrichR","ComplexHeatmap", "lmtest", "scico", "parallel", "combinat", "rWikiPathways", "RColorBrewer", "RCy3")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) BiocManager::install(new.packages)
 library(colorRamps)
 library(circlize)
-library(viridis)
 library(enrichR)
 library(ComplexHeatmap)
 library(lmtest)
 library(scico)
 library(parallel)
 library(combinat)
-library(plotrix)
 library(rWikiPathways)
 library(RColorBrewer)
 library(RCy3)
@@ -17,7 +18,6 @@ library(RCy3)
 
 
 ################ Source external functions #####
-setwd("/home/cgobet/CHIRAL/Paper/")
 source("ridgeInR.R")
 source("nconds_functions.R")
 source("nconds.R")
@@ -413,18 +413,23 @@ generate_comp_heatmap=function(tiss.2, dat, dat.c1, dat.c2, subsampling, mo, out
 
 ####### Run the heatmaps for every model in AGE or MF condition
 
-dv='MF' # or 'AGE'
+#dv='MF' # or 'AGE'
 output_path="./plot/complex_heatmaps/"
-N.cores = 18 
+if(!exists("N.cores")) N.cores = 18 
+if(!exists("as.paper")) as.paper=FALSE
 dir.create(output_path, showWarnings = FALSE,recursive = TRUE)
-as.paper=FALSE
+
+
+
 
 if(as.paper){ 
   path.dat="./paper_data/OUT_paper/"
 }else{
   path.dat="./data/OUT/"
-  
 }
+  
+  
+  for(dv in c("MF", "AGE")){
   if(dv =='MF'){
     dat.ss=get(load(paste0(path.dat,"SS_MF.RData")))
     dat.all=get(load(paste0(path.dat, "OUT_MF.RData")))
@@ -442,13 +447,17 @@ for(k in names(dat.ss)){
   DD=NULL
   
   for(mo in 2:5){
+
     
     print(k);print(mo);
-    outi=generate_comp_heatmap(k, dat.ss[[k]], dat.all[[paste(k,c.1,sep="-")]],
-                               dat.all[[paste(k,c.2,sep="-")]], dv, mo, output_path, FALSE)
+    outi=generate_comp_heatmap(tiss.2=k, dat=dat.ss[[k]], dat.c1=dat.all[[paste(k,c.1,sep="-")]],
+                               dat.c2=dat.all[[paste(k,c.2,sep="-")]], subsampling=dv, mo=mo, output_path=output_path, cytoscape=FALSE)
     if(!is.null(outi)){
-      DD=DD %v% generate_comp_heatmap(k, dat.ss[[k]], dat.all[[paste(k,c.1,sep="-")]],
-                                      dat.all[[paste(k,c.2,sep="-")]], dv, mo, output_path, FALSE)
+      DD=DD %v% generate_comp_heatmap(tiss.2=k, dat=dat.ss[[k]], dat.c1=dat.all[[paste(k,c.1,sep="-")]],
+                                      dat.c2=dat.all[[paste(k,c.2,sep="-")]], subsampling=dv, mo=mo, output_path=output_path, cytoscape=FALSE)
+      
+      #generate_comp_heatmap(k, dat.ss[[k]], dat.all[[paste(k,c.1,sep="-")]],
+       #                               dat.all[[paste(k,c.2,sep="-")]], dv, mo, output_path, FALSE)
     }
   }
   
@@ -459,7 +468,7 @@ for(k in names(dat.ss)){
   }
 }
 
-
+}
 
 
 
