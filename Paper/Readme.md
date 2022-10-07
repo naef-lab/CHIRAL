@@ -12,16 +12,13 @@ Install the `CHIRAL` package:
 ```
 install.packages("devtools");
 devtools::install_github("naef-lab/CHIRAL/Pkg/Chiral")
-
 ```
 
 ### Data
-1. Download the external data to use pre-computed files.
-2. Visit https://doi.org/10.5281/zenodo.6637875 and download the folders "OUT_paper" and "CPM". 
-3. Copy those folders into "Paper/paper_data". 
-4. Make sure to set your working directory such that `./paper_data/OUT_paper/` and `./paper_data/CPM/` exist and are readable.
-
-### Set the working directory in the "wherever/you/cloned/Paper" folder
+1. Download the external data to use pre-computed files. Visit https://doi.org/10.5281/zenodo.6637875 and download the folders "OUT_paper" and "CPM". 
+2. Copy those folders into "Paper/paper_data". 
+3. Make sure to set your working directory such that `./paper_data/OUT_paper/` and `./paper_data/CPM/` exist and are readable.
+4. Set the your R working directory in the "wherever/you/cloned/Paper" folder
 
 ## Running the code
 
@@ -32,6 +29,7 @@ Rscript Main.R
 ```
 
 In a more control way, you can run each script individually with the following order:
+
 ```
 Rscript To_CPM.R
 Rscript DIP_inf.R
