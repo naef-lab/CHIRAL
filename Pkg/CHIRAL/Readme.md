@@ -1,4 +1,4 @@
-`CHIRAL` (Circular HIerarchical Reconstruction ALgorithm) is an R package that provides a Bayesian method to infer the circular coordinates of a set of samples. It has been developed for the circadian clock but can be used on any other circualr dataset, e.g. the cell cycle.
+`CHIRAL` (Circular HIerarchical Reconstruction ALgorithm) is an R package that provides a Bayesian method to infer the circular coordinates of a set of samples. It has been developed for the circadian clock but can be used on any other circular dataset, e.g. the cell cycle.
 
 ## Getting Started
 
@@ -7,8 +7,8 @@ These instructions will allow you to get `CHIRAL` running on your machine.
 ### Prerequisites
 You need to install R (see https://www.r-project.org/).
 
-`CHIRAL` accepts a matrix containing on the rows the variable quantity (in general genes) and on the column different measures taken at different times in the cycle of interest (samples along the day for the circadian clock). Data that were used to implement `CHIRAL` are typically produced by bulk RNA-Seq, but it has been tested also on scRNA-seq. The variable quantities should follow a sinusoidal curve along the cycle, thus for RNA-seq and scRNA-seq log-transformed (and possibly smoothed in the case of sc) data are required to obtain relevant results. To use this on RNA-seq data we suggest either to only use exon count or to  input exon and intron measurements as two different genes. It come with helper function to calculate relevant parameters for circualr distributions, break the intrinsic symmetries of the algorythm and improve visual plotting.
-Given the fully probabilistic and unsupervised approach to the problem `CHIRAL` has two symmetries: there is a rotational symmetry and a sign symmettry; these two can be broke either with additional knowledge on the process of interest or by comparison with the real pahses. 
+`CHIRAL` accepts a matrix containing on the rows the variable quantities (in general genes) and on the column the different measures taken at different times in the cycle of interest (i.e. samples along the day for the circadian clock). Data that were used to implement `CHIRAL` are typically produced by bulk RNA-Seq but has been tested also on scRNA-seq. The variable quantities should follow a sinusoidal curve along the cycle, thus for RNA-seq and scRNA-seq log-transformed and normalized (and possibly smoothed in the case of scRNA-seq) data are required to obtain relevant results. The package comes with helper functions to calculate relevant parameters for circular distributions, break the intrinsic symmetry of the algorithm, and visual plotting.
+Given the fully probabilistic and unsupervised approach to the problem `CHIRAL` has two symmetries: there is a rotational symmetry and a sign symmetry; these two can be broken either with additional knownledge on the process of interest or by comparison with the real phases. 
 
 ### Installing
 
@@ -19,50 +19,61 @@ devtools::install_github("naef-lab/CHIRAL/Pkg/CHIRAL")
 ```
 ## Quick start
 ### Example dataset 
-`CHIRAL` comes with example data in form of a list called example; these data are taken from "Transcriptomic analyses reveal rhythmic and CLOCK-driven pathways in human skeletal muscle", Perrin et al. eLife 2018. The list contains exon count data: example[["Muscle_exon"]], a vector with the real time when these samples were collected: example[["true_phi"]], and a vector indicating the subject from which each sample was taken simData[["time"]].
+`CHIRAL` comes with example data in form of a list `example`; these data were taken from "Transcriptomic analyses reveal rhythmic and CLOCK-driven pathways in human skeletal muscle", Perrin et al. eLife 2018. The list contains time-series count data from human biopsies `example[["Muscle_exon"]]`, a vector with the real sample collection time `example[["true_phi"]]`, and the clock reference genes used for the sample ordering `example[["CRG_ens"]]`.
 
 ### Running an example
+
+Import the data. The matrix is formatted as required: on the columns we have the samples, on the rows the genes, and the rownames are the gene names (in this case Ensembl format).
 ```
 require(CHIRAL)
-
-data<-example[["Muscle_exon"]]            #Import the data. This matrix is formatted as it should be: on the columns we have samples, on the rows we have genes, rownames are the gene names (in this case ENSG)
-
-gene_inf=example[["CRG_ens"]]             #We select genes related to the clock. Note that we can also run CHIRAL on the full matrix but might pick up other sources of variation and intepret those as periodic.
-
-out=CHIRAL(data, clockgenes = gene_inf)   #We run the algorythm using the genes we just selected
+data<-example[["Muscle_exon"]]            
 ```
-#Outputs
+We selected genes related to the clock as references. Note that, `CHIRAL` can also be run on the full matrix but might pick up other sources of variation and interpret those as periodic.
+```
+gene_inf<-example[["CRG_ens"]]    
+```
+Run the algorithm with the selected genes. 
+```
+out<-CHIRAL(data, clockgenes = gene_inf)   
+```
+##### Outputs
 
-We can look at all the output
+The output contains multiple variables:
 ```
 names(out)
 ```
-we should find inferred phases in [0,2*pi], inferred standard deviation of the data, gene parameters gene weigths (relevant with two state model),
-iteration of stop, inferred standard deviation of data of rhythmic genes, the input matrix, history of the Q function of the EM, genes selected, matrix used for inference.
-A shorter output should coincide with an error message.
-The main result of CHIRAL is the phase ordering, we will focus on that.
+In particular: the inferred phases in [0,2*pi], the inferred standard deviation of the data, the gene parameters gene weigths (relevant with two state model),
+the stop iteration number, the inferred standard deviation of rhythmic gene, the input matrix, the history of the EM Q function, the selected genes, the matrix used for inference.
+A shorter output should coincide with an error message. The main result of CHIRAL is the phase ordering, then we will focus on that:
+
+Plotting an histogram and look at the general phase distribution.
 ```
-hist(out$phi)                                                           #We can start by plotting an histogram and look at the general distribution
-
-true.phi=example[["true_phi"]]                                          #Load the real phases
-
-plot(true.phi, out$phi)                                                 #Do the plot to compare inferred and true phases
+hist(out$phi)    
 ```
-#Helper functions
-
-Now the plotting might look bad and might change from run to run due to the intrinsic nature of the algorythm.
-
-For this reason we provide helper functions to break invariances and use the cyclic nature of the phases vor visually better plots.
+Load the real phases.
+```
+true.phi<-example[["true_phi"]]   
+```
+Plot to compare inferred and true phases.
 
 ```
-inf.phi=delta.phi(true.phi, out$phi, mode = "say", median_scale=12/pi)  #Adjust the phases and get the median absolute error (in hours) using the helper function
+plot(true.phi, out$phi)                                                 
+```
 
-abs(cor.c(true.phi, inf.phi))                                           #Get the correlation
+##### Helper functions
 
-adj.phi=adjust.phases(true.phi, inf.phi)                                #Adjust the phases for plotting
+Due to the intrinsic nature of the algorithm, the correlation might not seem correct in the plot. We provide helper functions to break invariances and use the cyclic nature of the phases for better visualization.
 
-plot(true.phi, adj.phi)                                                 #Do the plot to compare inferred and true phases
+Adjust the phases and get the median absolute error (in hours) using the helper function. Get the circular correlation between real and inferred phases.
+```
+inf.phi=delta.phi(true.phi, out$phi, mode = "say", median_scale=12/pi)  
+abs(cor.c(true.phi, inf.phi))       
+```
+Adjust the phases and plot the inferred and true phases.
 
+```
+adj.phi=adjust.phases(true.phi, inf.phi)                                
+plot(true.phi, adj.phi)                                                
 ```
 
 

@@ -171,126 +171,64 @@ pre code {
 </div>
 
 
-<p><code>dryR</code> (Differential RhythmicitY analysis in R) is an R package that provides the statistical framework to assess differential rhythmicity of a time series of RNA-Seq data with two and more conditions.</p>
+<p><code>CHIRAL</code> (Circular HIerarchical Reconstruction ALgorithm) is an R package that provides a Bayesian method to infer the circular coordinates of a set of samples. It has been developed for the circadian clock but can be used on any other circular dataset, e.g. the cell cycle.</p>
 <div id="getting-started" class="section level2">
 <h2>Getting Started</h2>
-<p>These instructions will allow you to get <code>dryR</code> running on your machine.</p>
+<p>These instructions will allow you to get <code>CHIRAL</code> running on your machine.</p>
 <div id="prerequisites" class="section level3">
 <h3>Prerequisites</h3>
 <p>You need to install R (see <a href="https://www.r-project.org/" class="uri">https://www.r-project.org/</a>).</p>
-<p><code>dryR</code> accepts count data typically produced by RNA-Seq with a time dimension and several conditions/groups. The input count data should contain only integer values and be organized in a matrix with rows indicating a specific gene and the column refering to a sample.</p>
-<p>The pipelines that can be used to produce these count data from RNA-Seq data (FASTQ files) are described in more detail here: <a href="http://master.bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html" class="uri">http://master.bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html</a></p>
-<p>A user-friendly web application to generate a count table from FASTQ files is provided here: <a href="https://amp.pharm.mssm.edu/biojupies/" class="uri">https://amp.pharm.mssm.edu/biojupies/</a></p>
+<p><code>CHIRAL</code> accepts a matrix containing on the rows the variable quantities (in general genes) and on the column the different measures taken at different times in the cycle of interest (i.e. samples along the day for the circadian clock). Data that were used to implement <code>CHIRAL</code> are typically produced by bulk RNA-Seq but has been tested also on scRNA-seq. The variable quantities should follow a sinusoidal curve along the cycle, thus for RNA-seq and scRNA-seq log-transformed and normalized (and possibly smoothed in the case of scRNA-seq) data are required to obtain relevant results. The package comes with helper functions to calculate relevant parameters for circular distributions, break the intrinsic symmetry of the algorithm, and visual plotting. Given the fully probabilistic and unsupervised approach to the problem <code>CHIRAL</code> has two symmetries: there is a rotational symmetry and a sign symmetry; these two can be broken either with additional knownledge on the process of interest or by comparison with the real phases.</p>
 </div>
 <div id="installing" class="section level3">
 <h3>Installing</h3>
-<p>To install <code>dryR</code> run the following code in R.</p>
+<p>To install <code>CHIRAL</code> run the following code in R.</p>
 <pre><code>install.packages(&quot;devtools&quot;)
-devtools::install_github(&quot;naef-lab/dryR&quot;)</code></pre>
+devtools::install_github(&quot;naef-lab/CHIRAL/Pkg/CHIRAL&quot;)</code></pre>
 </div>
 </div>
 <div id="quick-start" class="section level2">
 <h2>Quick start</h2>
 <div id="example-dataset" class="section level3">
 <h3>Example dataset</h3>
-<p><code>dryR</code> comes with example data in form of a list called simData. The list contains count data simData[[“countData”]], a vector with the different conditions/groups simData[[“group”]], and a vector indicating Zeitgeber Time simData[[“time”]]. The data was generated using simphony <a href="https://github.com/hugheylab/simphony" class="uri">https://github.com/hugheylab/simphony</a>.</p>
+<p><code>CHIRAL</code> comes with example data in form of a list <code>example</code>; these data were taken from “Transcriptomic analyses reveal rhythmic and CLOCK-driven pathways in human skeletal muscle”, Perrin et al. eLife 2018. The list contains time-series count data from human biopsies <code>example[[&quot;Muscle_exon&quot;]]</code>, a vector with the real sample collection time <code>example[[&quot;true_phi&quot;]]</code>, and the clock reference genes used for the sample ordering <code>example[[&quot;CRG_ens&quot;]]</code>.</p>
 </div>
 <div id="running-an-example" class="section level3">
 <h3>Running an example</h3>
-<pre><code>library(&quot;dryR&quot;)
-
-# prepare arguments
-countData = simData[[&quot;countData&quot;]]
-group     = simData[[&quot;group&quot;]]
-time      = simData[[&quot;time&quot;]]
-
-# run the analysis for count data (e.g. RNA-Seq data)
-dryList   = dryseq(countData,group,time)
-
-# explore the results
-dryList[[&quot;results&quot;]]     # data frame summarizing results
-dryList[[&quot;parameters&quot;]]  # coefficients: phase, amplitude and mean for each group
-dryList[[&quot;ncounts&quot;]]     # normalized counts
-dryList[[&quot;counts&quot;]]      # raw counts
-dryList[[&quot;cook&quot;]]        # cook&#39;s distance for outlier detection
-dryList[[&quot;BICW_rhythm&quot;]] # BICW for each rhythmic model
-dryList[[&quot;BICW_mean&quot;]]   # BICW for each mean model
-
-# generate a pdf with a global summary of all models
-plot_models_rhythm(dryList, &quot;./&quot;)
-
-# plot a feature of interest
-dry_plot(dryList, &quot;feature_113&quot;)</code></pre>
+<p>Import the data. The matrix is formatted as required: on the columns we have the samples, on the rows the genes, and the rownames are the gene names (in this case Ensembl format).</p>
+<pre><code>require(CHIRAL)
+data&lt;-example[[&quot;Muscle_exon&quot;]]            </code></pre>
+<p>We selected genes related to the clock as references. Note that, <code>CHIRAL</code> can also be run on the full matrix but might pick up other sources of variation and interpret those as periodic.</p>
+<pre><code>gene_inf&lt;-example[[&quot;CRG_ens&quot;]]    </code></pre>
+<p>Run the algorithm with the selected genes.</p>
+<pre><code>out&lt;-CHIRAL(data, clockgenes = gene_inf)   </code></pre>
+<div id="outputs" class="section level5">
+<h5>Outputs</h5>
+<p>The output contains multiple variables:</p>
+<pre><code>names(out)</code></pre>
+<p>In particular: the inferred phases in [0,2*pi], the inferred standard deviation of the data, the gene parameters gene weigths (relevant with two state model), the stop iteration number, the inferred standard deviation of rhythmic gene, the input matrix, the history of the EM Q function, the selected genes, the matrix used for inference. A shorter output should coincide with an error message. The main result of CHIRAL is the phase ordering, then we will focus on that:</p>
+<p>Plotting an histogram and look at the general phase distribution.</p>
+<pre><code>hist(out$phi)    </code></pre>
+<p>Load the real phases.</p>
+<pre><code>true.phi&lt;-example[[&quot;true_phi&quot;]]   </code></pre>
+<p>Plot to compare inferred and true phases.</p>
+<pre><code>plot(true.phi, out$phi)                                                 </code></pre>
 </div>
+<div id="helper-functions" class="section level5">
+<h5>Helper functions</h5>
+<p>Due to the intrinsic nature of the algorithm, the correlation might not seem correct in the plot. We provide helper functions to break invariances and use the cyclic nature of the phases for better visualization.</p>
+<p>Adjust the phases and get the median absolute error (in hours) using the helper function. Get the circular correlation between real and inferred phases.</p>
+<pre><code>inf.phi=delta.phi(true.phi, out$phi, mode = &quot;say&quot;, median_scale=12/pi)  
+abs(cor.c(true.phi, inf.phi))       </code></pre>
+<p>Adjust the phases and plot the inferred and true phases.</p>
+<pre><code>adj.phi=adjust.phases(true.phi, inf.phi)                                
+plot(true.phi, adj.phi)                                                </code></pre>
 </div>
-<div id="non-standard-scenarios" class="section level2">
-<h2>Non-standard scenarios</h2>
-<div id="rhythmicity-detection-in-rna-seq-datasets-with-one-condition" class="section level3">
-<h3>Rhythmicity detection in RNA-Seq datasets with one condition</h3>
-<p>To detect rhythmic gene expression in RNA-Seq data with only one condition, we implemented the function <code>dryseq_single</code>.</p>
-<pre><code>library(&quot;dryR&quot;)
-
-# prepare arguments for a one condition scenario
-sel = grep(&quot;cond_1&quot;, simData[[&quot;group&quot;]])
-countData_single = simData[[&quot;countData&quot;]][,sel]
-group_single     = simData[[&quot;group&quot;]][sel]
-time_single      = simData[[&quot;time&quot;]][sel]
-
-# run the analysis for count data.
-dryList   = dryseq_single(countData_single,group_single,time_single)
-
-# explore the results
-dryList[[&quot;results&quot;]]    # data frame summarizing results
-
-# plot a feature of interest
-plot_single_cond(dryList, &quot;feature_004&quot;)</code></pre>
-</div>
-<div id="normally-distributed-data" class="section level3">
-<h3>Normally distributed data</h3>
-<p>To asses temporal variation of normally distributed measurements, we implemented the function <code>drylm</code> that can deal with gaussian noise using linear models.</p>
-<pre><code>library(&quot;dryR&quot;)
-
-# prepare arguments
-data      = log(simData[[&quot;countData&quot;]]+1)
-group     = simData[[&quot;group&quot;]]
-time      = simData[[&quot;time&quot;]]
-
-# run the analysis with normally distributed data
-dryList = drylm(data,group,time)
-
-# explore the results
-dryList[[&quot;results&quot;]]    # data frame summarizing results
-dryList[[&quot;parameters&quot;]] # coefficients: phase, amplitude and mean for each group
-
-# generate a pdf with a global summary of all models
-plot_models_rhythm(dryList, &quot;./&quot;)
-
-# plot a feature of interest
-dry_plot(dryList, &quot;feature_013&quot;)</code></pre>
-</div>
-<div id="dryr-with-a-simple-vector-as-input" class="section level3">
-<h3>DryR with a simple vector as input</h3>
-<p>You can run <code>drylm</code> with a simple vector that contains data from a time series of multiple groups.</p>
-<pre><code>library(&quot;dryR&quot;)
-
-# define time and group for each sample
-time        = c(1:48,1:48)   # Zeitgeber time or Circadian time in h for each sample
-group       = c(rep(&quot;KO&quot;,48), rep(&quot;WT&quot;,48))
-
-# run the analysis with normally distributed data
-dryList = drylm(vector_example,group,time)
-
-# explore the results
-dryList[[&quot;results&quot;]]    # data frame summarizing results. Row 2 is a copy of row 1.
-dryList[[&quot;parameters&quot;]] # coefficients: phase, amplitude and mean for each group. Row 2 is a copy of row 1.
-
-#plot the result of the selected model
-dry_plot(dryList, &quot;X1&quot;)</code></pre>
 </div>
 </div>
 <div id="help" class="section level2">
 <h2>Help</h2>
-<p>A documentation using <code>?dryseq</code> or <code>?drylm</code> function is available.</p>
+<p>A documentation using <code>?CHIRAL</code> is available as well as for the other helper functions.</p>
 </div>
 
 
