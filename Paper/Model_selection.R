@@ -1,5 +1,5 @@
-rm(list=ls())
-gc()
+#rm(list=ls())
+#gc()
 ### Libraries ###
 source("./nconds_functions.R")
 source("./nconds.R")

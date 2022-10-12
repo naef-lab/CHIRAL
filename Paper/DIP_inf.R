@@ -1,5 +1,5 @@
-rm(list=ls())
-gc()
+#rm(list=ls())
+#gc()
 #### Libraries ####
 list.of.packages <- c("lmtest", "ggplot2")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
@@ -279,6 +279,7 @@ if(!exists("use.paper.DIP")) use.paper.DIP=FALSE
 
 
 dir.create(file.path("./data/OUT"), showWarnings = FALSE)
+
 if(!file.exists(file="./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")){ 
   samp = fread('https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt')
   fwrite(samp, file = "./paper_data/raw/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt")
@@ -297,6 +298,8 @@ if(!as.paper){
   CPM.all.norm.large=get(load("./data/CPM/CPM.all.norm_large.RData"))
   CPM.all.norm=get(load("./data/CPM/CPM.all.norm.RData"))
 }
+
+if(!use.paper.DIP){
 
 E=CPM_to_E(CPM.all.norm)
 
@@ -317,11 +320,16 @@ phi=Phi.from.phi_mat(phi_matrix, ct=1.95) #these phases will not be identical to
 save(phi, file="./data/DIPs.RData")
 
 ii = intersect(names(phi_paper),names(phi))
+
 qplot(phi_paper[ii],phi[ii])
 
-E=CPM_to_E(CPM.all.norm.large)
+}else if(use.paper.DIP){
+  
+  phi=get(load("./paper_data/DIPs.RData"))
+  
+  }
 
-if(use.paper.DIP){phi=phi_paper}
+E=CPM_to_E(CPM.all.norm.large)
 
 OUT=Make_big_OUT(E, phi)
 

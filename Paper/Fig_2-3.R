@@ -1,5 +1,5 @@
-rm(list=ls())
-gc()
+#rm(list=ls())
+#gc()
 ### Libraries ###
 list.of.packages <- c("vroom", "ggplot2")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]

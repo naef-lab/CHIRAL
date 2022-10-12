@@ -47,7 +47,7 @@ if(! as.paper) source("To_CPM.R")
 
 ### Infer and save the DIPs if not planning on using provided ones ###
 
-if(! use.paper.DIP) source("DIP_inf.R")
+source("DIP_inf.R")
 
 ### Generate Figure 1 ###
 
