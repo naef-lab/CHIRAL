@@ -38,24 +38,24 @@ split_E_sex<-function(E, samp){
 }
 #Divide E object by age of donors
 split_E_age<-function(E, samp){
-  males=samp$sub.id[samp$AGE>60]
-  females=samp$sub.id[samp$AGE<50]
+  old=samp$sub.id[samp$AGE>60]
+  young=samp$sub.id[samp$AGE<50]
   A=list()
   for(i in names(E)){
     e=E[[i]]
     ee=e$E
     cn=colnames(ee)
     cn=gsub("\\..*$","", gsub("GTEX.","", cn))
-    midx=match(males, cn)
-    midx=midx[!is.na(midx)]
-    if (length(midx)>24){
-      e$E=ee[,midx]
+    yidx=match(young, cn)
+    yidx=yidx[!is.na(yidx)]
+    if (length(yidx)>24){
+      e$E=ee[,yidx]
       A[[paste(i, "YOUNG", sep="-")]]=e
     }
-    fidx=match(females, cn)
-    fidx=fidx[!is.na(fidx)]
-    if (length(fidx)>24){
-      e$E=ee[,fidx]
+    oidx=match(old, cn)
+    oidx=oidx[!is.na(oidx)]
+    if (length(oidx)>24){
+      e$E=ee[,oidx]
       A[[paste(i, "OLD", sep="-")]]=e
     }  }
   return(A)
