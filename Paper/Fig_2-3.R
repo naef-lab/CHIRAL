@@ -273,6 +273,57 @@ Plot_MS_cumulative<-function(OUT, SS, MS=T, div="MF", val="R", pth=NULL, strict=
   dev.off()
 }
 
+#Calculate the svd for an OUT file
+svd.from.out<-function(OUT, inter.genes, ENSG=F){
+  gene.c=matrix(0, nrow = length(inter.genes),ncol=length(names(OUT)))
+  dimnames(gene.c)=list(inter.genes,names(OUT))
+  gtot=NULL
+  for(i in names(OUT)){ 
+    out=OUT[[i]]
+    fit=out$data.fit
+    gene.list=gsub("\\|.*$","",gsub("^.*_", "",fit$genes))
+    if(ENSG){
+      gls=gene.list
+      gene.list=gsub("\\..*$","",gsub("_.*$", "",fit$genes))
+    }
+    clock.coord=sapply(inter.genes,function(x){match(x, gene.list)})
+    clock.coord=clock.coord[!is.na(clock.coord)]
+    fit=fit[clock.coord,]
+    if(ENSG){
+      gtot=union(gtot,fit$genes)
+    }
+    A=fit[,c("amp", "a","b", "genes")]
+    rownames(A)=gsub("\\|.*$","",gsub("^.*_", "",A$genes))
+    if(ENSG){
+      rownames(A)=gsub("\\..*$","",gsub("_.*$", "",A$genes))
+    }
+    B=A
+    A=complex(real = A[,"a"], imaginary =  A[,"b"])
+    names(A)=rownames(B)
+    
+    gene.c[,i]=A[inter.genes]
+  }
+  gene.c[is.na(gene.c)]=0
+  if(ncol(gene.c)*nrow(gene.c)==0){return(NULL)}
+  SVD=svd(gene.c)
+  
+  for(k in 1:length(SVD$d)){
+    mn=sum(SVD$v[,k])
+    rot=Conj(mn)/Mod(mn)
+    SVD$u[,k]=SVD$u[,k]*rot*max(Mod(SVD$v[,k]))*SVD$d[k]
+    SVD$v[,k]=Conj(SVD$v[,k]*rot/max(Mod(SVD$v[,k])))
+  }
+  
+  rownames(SVD$u)=rownames(gene.c)
+  if(ENSG){
+    gtot=unique(gtot)
+    pox=match(rownames(SVD$u), gsub("\\..*$","",gsub("_.*$", "",gtot)))
+    rownames(SVD$u)=gsub("\\|.*$","",gsub("^.*_", "",gtot))[pox]
+  }
+  rownames(SVD$v)=names(OUT)
+  return(SVD)
+}
+
 #Plots the densities according to the model selection parameters
 Plot_MS_density<-function(OUT, SS, phi, phenot, MS=T, div="MF", pth=NULL, strict=F, qcut=0.2, size=20, th=1){
   
@@ -625,6 +676,7 @@ for (div in c("MF", "AGE")){
 lb=6
 pt=3
 sz=18
+gene_inf=get(load("./paper_data/CGRs.RData"))
 for (div in c("MF", "AGE")){
   if(div=="MF") {
     OUT= OUT.MF

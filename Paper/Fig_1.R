@@ -228,7 +228,7 @@ Plot_profiles<-function(OUT, tissues, geni, plt.hist=FALSE, R.plot=FALSE, val="p
   if(R.plot) return(f.plot)
 }
 
-#CAlculate the svd for an OUT file
+#Calculate the svd for an OUT file
 svd.from.out<-function(OUT, inter.genes, ENSG=F){
   gene.c=matrix(0, nrow = length(inter.genes),ncol=length(names(OUT)))
   dimnames(gene.c)=list(inter.genes,names(OUT))
