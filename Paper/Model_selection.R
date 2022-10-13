@@ -95,8 +95,8 @@ CPM_to_E<-function(CPM.all.norm, min.samp=24, sep=NULL, samp=NULL){
       }
     }
     if( tolower(sep)=="age"){
-      young=samp$sub.id[samp$AGE>60]
-      old=samp$sub.id[samp$AGE<50]
+      old=samp$sub.id[samp$AGE>60]
+      young=samp$sub.id[samp$AGE<50]
       for(name in names(CPM.all.norm)){
         E=list()
         E$E=CPM.all.norm[[name]]
@@ -105,11 +105,11 @@ CPM_to_E<-function(CPM.all.norm, min.samp=24, sep=NULL, samp=NULL){
           E$tissue=name
           ml=fm=list()
           ml$E=E$E[,colnames(E$E) %in% young]
-          ml$type="GTEX-old"
+          ml$type="GTEX"
           ml$tissue=name
           if(ncol(ml$E)>=min.samp){E.matrix[[paste(name, "YOUNG", sep="-")]]=ml}
           fm$E=E$E[,colnames(E$E) %in% old]
-          fm$type="GTEX-young"
+          fm$type="GTEX"
           fm$tissue=name
           if(ncol(fm$E)>=min.samp){E.matrix[[paste(name, "OLD", sep="-")]]=fm}
         }

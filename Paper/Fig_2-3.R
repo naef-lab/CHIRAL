@@ -50,8 +50,8 @@ Plot_cSVD<-function(input, genes, full_col=NULL,loc=NULL, ENSG=F, ncomp=NULL, CT
     colz=rownames(SVD$v)
     shepz=rep("all",nrow(SVD$v))
     deco_names=dec_names
-    if(any(endsWith(rownames(SVD$v),"Male")) || any(endsWith(rownames(SVD$v),"young"))){
-      colz=gsub("-old", "",gsub("-young", "",gsub("-Female", "",gsub("-Male", "", rownames(SVD$v)))))
+    if(any(endsWith(rownames(SVD$v),"MALE")) || any(endsWith(rownames(SVD$v),"YOUNG"))){
+      colz=gsub("-OLD", "",gsub("-YOUNG", "",gsub("-FEMALE", "",gsub("-MALE", "", rownames(SVD$v)))))
       shepz=gsub("^.*-", "", rownames(SVD$v))
       dec1_names=paste(dec_names, unique(shepz)[1], sep="-")
       dec2_names=paste(dec_names,unique(shepz)[2], sep="-")
@@ -338,8 +338,8 @@ Plot_MS_density<-function(OUT, SS, phi, phenot, MS=T, div="MF", pth=NULL, strict
   phenot$SUBJID=gsub("^.*-","",phenot$SUBJID)
   phenot$age_cat="middle"
   phenot$sex=phenot$SEX
-  phenot$sex[phenot$SEX==1]="male"
-  phenot$sex[phenot$SEX==2]="female"
+  phenot$sex[phenot$SEX==1]="MALE"
+  phenot$sex[phenot$SEX==2]="FEMALE"
   phenot$age_cat[phenot$AGE>60]="OLD"
   phenot$age_cat[phenot$AGE<50]="YOUNG"
   phio=phi
