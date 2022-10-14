@@ -293,7 +293,7 @@ if(!exists("use.paper.DIP")) use.paper.DIP=FALSE
 if(as.paper) load("./paper_data/OUT_paper/OUT_ALL.RData") else load("./data/OUT/OUT_ALL.RData")
 if(use.paper.DIP) load("./paper_data/DIPs.RData") else load("./data/DIPs.RData")
   
-
+dir.create("./plot", showWarnings = FALSE)
 dir.create("./plot/Figure1", showWarnings = FALSE)
 
 pdf("./plot/Figure1/Fig1_F.pdf")
