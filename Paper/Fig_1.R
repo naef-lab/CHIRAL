@@ -314,7 +314,7 @@ qcut=0.2
 Rcut=0.5
 
 
-pdf("./plot/Figure1/Fig1_G.pdf"){
+pdf("./plot/Figure1/Fig1_G.pdf")
   phi.full=NULL
   pho=NULL
   #One density plot per tissue
@@ -359,14 +359,14 @@ pdf("./plot/Figure1/Fig1_G.pdf"){
     theme(legend.position = "none", text = element_text(size=sz))
   print(ppt)
   dev.off()
-}
+
 
 val="R"
 all=NULL
 tbt=NULL
 
 
-pdf("./plot/Figure1/Fig1_H.pdf"){
+pdf("./plot/Figure1/Fig1_H.pdf")
   for(j in names(OUT)){
     out=OUT[[j]]
     fit=out$data.fit
@@ -446,7 +446,7 @@ pdf("./plot/Figure1/Fig1_H.pdf"){
     }
   }
   dev.off()
-}
+
 
 #Plot the SVD of interesting gene groups
 lb=6

@@ -149,7 +149,7 @@ generate_comp_heatmap=function(tiss.2, dat, dat.c1, dat.c2, subsampling, mo, out
     ##### GO TERM #######
     dbs <- listEnrichrDbs()
     
-    dbb=dbs$libraryName[grep('GO_Biological_Process_2021|KEGG_2021_Human|WikiPathway_2021_Human',dbs$libraryName)]
+    dbb=c('GO_Biological_Process_2021','KEGG_2021_Human','WikiPathway_2021_Human')
     GO.sub=list()
     
     g.name=gsub(".+_","",rownames(dat.mo))
@@ -456,8 +456,6 @@ for(k in names(dat.ss)){
       DD=DD %v% generate_comp_heatmap(tiss.2=k, dat=dat.ss[[k]], dat.c1=dat.all[[paste(k,c.1,sep="-")]],
                                       dat.c2=dat.all[[paste(k,c.2,sep="-")]], subsampling=dv, mo=mo, output_path=output_path, cytoscape=FALSE)
       
-      #generate_comp_heatmap(k, dat.ss[[k]], dat.all[[paste(k,c.1,sep="-")]],
-       #                               dat.all[[paste(k,c.2,sep="-")]], dv, mo, output_path, FALSE)
     }
   }
   

@@ -38,8 +38,8 @@ library(RCy3)
 your_path=file.path(getwd(), "Paper") # should be the path were you cloned the repository, inside the Paper folder
 N.cores = 18  # Number of core to paralellize the different pre-processing functions. Be sure to have enough RAM if you increase the number of cores used.
 setwd(your_path)
-as.paper=FALSE #If TRUE will not recumpute files and used the ones you downloaded from .. and have appropriately placed
-use.paper.DIP=FALSE #If TRUE the script recreates exactly the paper figures as it removes the stochasticity of the TIP inference
+as.paper=FALSE #If TRUE will not recompute files and used the ones you downloaded 
+use.paper.DIP=TRUE #If TRUE the script recreates exactly the paper figures as it removes the stochasticity of the TIP inference
 
 ### Normalize data if not planning on using provided data ###
  
@@ -55,19 +55,16 @@ source("Fig_1.R")
 
 ### Model selection to assign gene rhythmicity ###
 
-if(! as.paper) source("Model_selection.R") 
+if(!as.paper) source("Model_selection.R") 
 
 ### Generate Figures 2 and 3 
-
 #Parameters for Figures 2 and 3
-
-
 #MS: use model selection
 MS=T
 #Plot parameters
 sz=20
 th=1
-#q-value cut. Note that any qcut>0.2 has no bearing if MS==T
+#q-value cutoff. Note that any qcut>0.2 has no bearing if MS==T
 qcut=0.2
 #Parameter to determine if using genes only rhythmic in condition X or genes also rhythmic in condition X
 strict=F
@@ -77,11 +74,10 @@ strict=F
 #"qval": q-value
 val="R"
 
-
 #Generate panels that are not heatmaps
 
 source("Fig_2-3.R")
 
-#Generate heat maps
+#Generate heatmaps
 
-source("Complex_Heatmaps.R")
+source("Complex_heatmaps.R")
