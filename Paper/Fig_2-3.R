@@ -1,11 +1,13 @@
 #rm(list=ls())
 #gc()
 ### Libraries ###
-list.of.packages <- c("vroom", "ggplot2")
+list.of.packages <- c("vroom", "ggplot2", "ggrepel", "data.table")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) BiocManager::install(new.packages, force=TRUE)
 library(vroom)
 library(ggplot2)
+library(ggrepel)
+library(data.table)
 ### Functions ###
 spliti= function(x, sp, nb){
   v=sapply(strsplit(x,sp),"[[",nb)
@@ -680,10 +682,10 @@ gene_inf=get(load("./paper_data/CGRs.RData"))
 for (div in c("MF", "AGE")){
   if(div=="MF") {
     OUT= OUT.MF
-    Plot_cSVD(OUT, gene_inf, full_col,loc ="./plot/Figure2/Fig2_A" , CT=15, dot_size =pt, label_size = lb, text_size = sz)
+    Plot_cSVD(OUT, gene_inf, full_col,loc ="./plot/Figure2/Fig2_A" , CT=15, dot_size =pt, label_size = lb, text_size = sz, ncomp=3)
   }
   if(div=="AGE") {
     OUT= OUT.age
-    Plot_cSVD(OUT, gene_inf, full_col,loc ="./plot/Figure3/Fig3_A" , CT=15, dot_size =pt, label_size = lb, text_size = sz)
+    Plot_cSVD(OUT, gene_inf, full_col,loc ="./plot/Figure3/Fig3_A" , CT=15, dot_size =pt, label_size = lb, text_size = sz, ncomp=3)
   }
 }
