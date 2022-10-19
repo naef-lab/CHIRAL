@@ -15,7 +15,7 @@ devtools::install_github("naef-lab/CHIRAL/Pkg/Chiral")
 ```
 
 ### Data
-1. Download the external data to use pre-computed files. Visit https://drive.google.com/file/d/1s_qO8n99yi5-30Kj_xl30ljBp8AI-BAM/view?usp=sharing To download the data.
+1. Download the external data to use pre-computed files. Download from [here](https://drive.google.com/file/d/1s_qO8n99yi5-30Kj_xl30ljBp8AI-BAM/view?usp=sharing).
 2. Copy those folders into "Paper/paper_data". 
 3. Make sure to set your working directory such that `./paper_data/OUT_paper/` and `./paper_data/CPM/` exist and are readable.
 4. Set the your R working directory in the "wherever/you/cloned/Paper" folder
