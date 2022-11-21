@@ -413,7 +413,7 @@ calc.delta<-function(phi.0, phi, N=200){
 adjust.phases<-function(realphi, infphi, period=2*pi){
   if(abs(period-2*pi)>0.001){return(adjust.phases(realphi*2*pi/period, infphi*2*pi/period)*period/pi/2)}
   for(i in 1:length(realphi)){
-    if(realphi[i]-infphi[i]>pi){infphi[i]=2*pi-infphi[i]}
+    if(realphi[i]-infphi[i]>pi){infphi[i]=2*pi+infphi[i]}
     if(realphi[i]-infphi[i]<(-pi)){infphi[i]=infphi[i]-2*pi}
   }
   return(infphi)
