@@ -407,7 +407,7 @@ calc.delta<-function(phi.0, phi, N=200){
 #' @param period Period of the space where the phases live. Default 2*pi
 #' @return Set of shifted inferred phases.
 #' @examples
-#' delta.phi(true.phi, inf.phi)
+#' adjust.phases(true.phi, inf.phi)
 #' @export
 
 adjust.phases<-function(realphi, infphi, period=2*pi){
