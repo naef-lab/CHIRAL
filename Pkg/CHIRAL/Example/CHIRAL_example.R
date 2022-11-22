@@ -1,4 +1,4 @@
-require(Chiral)
+require(CHIRAL)
 data<-read.table("./paper_data/example/Muscle_exon.txt", header = TRUE, row.names = 1)
 #This matrix is formatted as it should be
 #on the columns we have samples
