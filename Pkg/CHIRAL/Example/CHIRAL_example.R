@@ -1,5 +1,5 @@
 require(CHIRAL)
-data<-read.table("./paper_data/example/Muscle_exon.txt", header = TRUE, row.names = 1)
+data<-read.table("./Pkg/CHIRAL/Example/Muscle_exon.txt", header = TRUE, row.names = 1)
 #This matrix is formatted as it should be
 #on the columns we have samples
 #on the rows we have genes
@@ -63,11 +63,11 @@ plot(c(out$clock), c(predicted))
 
 #Now we will take the good gene to infer circadian pahse of our data
 
-ens_inf=get(load("./Paper/paper_data/CRGs_ensg.RData"))
+ens_inf=get(load("./Pkg/CHIRAL/Example/CRG_ens.txt"))
 
 #Load real phases and metadata
 
-true_phi=read.table("./paper_data/example/true_phi.txt")$x
+true_phi=read.table("./Pkg/CHIRAL/Example/true_phi.txt")$x
 
 #Do the inference
 
