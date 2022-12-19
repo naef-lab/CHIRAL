@@ -1,7 +1,7 @@
 #rm(list=ls())
 #gc()
 #### Libraries ####
-list.of.packages <- c("lmtest", "ggplot2")
+list.of.packages <- c("lmtest", "ggplot2", "devtools")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) BiocManager::install(new.packages, force=TRUE)
 if(!("CHIRAL" %in% installed.packages()[,"Package"])) devtools::install_github("/naef-lab/CHIRAL/tree/master/Pkg/CHIRAL")
@@ -234,11 +234,11 @@ Phi.from.phi_mat<-function(phi.study, return.all=TRUE, min.tix=1, ct=1.95){
     }
     else{
       for(k in 1:length(pp)){
-        pc[k]=sum(Mod(pp+pp[k])>ct)
+        pc[k]=sum(Mod(pp+pp[k])>ct)#Count number of TIPs in 2h interval from TIP i
       }
-      kstar=which.max(pc)
-      gp=sum(pp[Mod(pp+pp[kstar])>ct])
-      phis[i]=gp/Mod(gp)}
+      kstar=which.max(pc) #find the most populated 2h interval
+      gp=sum(pp[Mod(pp+pp[kstar])>ct]) #take the mean
+      phis[i]=gp/Mod(gp)}#assign it as the DIP
   }
   phit=phit[!is.na(phit)]
   score=Mod(phit)
