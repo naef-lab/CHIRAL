@@ -26,7 +26,7 @@ devtools::install_github("naef-lab/CHIRAL/Pkg/CHIRAL")
 The matrix is formatted as required: on the columns we have the samples, on the rows the genes, and the rownames are the gene names (in this case Ensembl format).
 ```
 require(CHIRAL)
-head(muscle_expm)        
+head(muscle_exon)        
 ```
 We selected genes related to the clock as references. Note that, `CHIRAL` can also be run on the full matrix but might pick up other sources of variation and interpret those as periodic.
 ```
