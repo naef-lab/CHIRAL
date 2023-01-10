@@ -19,22 +19,22 @@ devtools::install_github("naef-lab/CHIRAL/Pkg/CHIRAL")
 ```
 ## Quick start
 ### Example dataset 
-`CHIRAL` comes with example data in form of a list `example`; these data were taken from "Transcriptomic analyses reveal rhythmic and CLOCK-driven pathways in human skeletal muscle", Perrin et al. eLife 2018. The list contains time-series count data from human biopsies `example[["Muscle_exon"]]`, a vector with the real sample collection time `example[["true_phi"]]`, and the clock reference genes used for the sample ordering `example[["CRG_ens"]]`.
+`CHIRAL` comes with an example dataset taken from "Transcriptomic analyses reveal rhythmic and CLOCK-driven pathways in human skeletal muscle", Perrin et al. eLife 2018. The data include time-series count RNA-seq from human biopsies `muscle_exon`, a vector with the real sample collection time `true_phi`, and the Ensembl clock reference genes used for the sample ordering `CRG_ens`.
 
 ### Running an example
 
-Import the data. The matrix is formatted as required: on the columns we have the samples, on the rows the genes, and the rownames are the gene names (in this case Ensembl format).
+The matrix is formatted as required: on the columns we have the samples, on the rows the genes, and the rownames are the gene names (in this case Ensembl format).
 ```
 require(CHIRAL)
-data<-example[["Muscle_exon"]]            
+head(muscle_expm)        
 ```
 We selected genes related to the clock as references. Note that, `CHIRAL` can also be run on the full matrix but might pick up other sources of variation and interpret those as periodic.
 ```
-gene_inf<-example[["CRG_ens"]]    
+head(CRG_ens)  
 ```
 Run the algorithm with the selected genes. 
 ```
-out<-CHIRAL(data, clockgenes = gene_inf)   
+out<-CHIRAL(data, clockgenes = CRG_ens)   
 ```
 ##### Outputs
 
@@ -50,14 +50,14 @@ Plotting an histogram and look at the general phase distribution.
 ```
 hist(out$phi)    
 ```
-Load the real phases.
+The true phases:
 ```
-true.phi<-example[["true_phi"]]   
+head(true_phi)  
 ```
 Plot to compare inferred and true phases.
 
 ```
-plot(true.phi, out$phi)                                                 
+plot(true_phi, out$phi)                                                 
 ```
 
 ##### Helper functions
@@ -66,14 +66,14 @@ Due to the intrinsic nature of the algorithm, the correlation might not seem cor
 
 Adjust the phases and get the median absolute error (in hours) using the helper function. Get the circular correlation between real and inferred phases.
 ```
-inf.phi=delta.phi(true.phi, out$phi, mode = "say", median_scale=12/pi)  
-abs(cor.c(true.phi, inf.phi))       
+inf_phi=delta.phi(true_phi, out$phi, mode = "say", median_scale=12/pi)  
+abs(cor.c(true_phi, inf_phi))       
 ```
 Adjust the phases and plot the inferred and true phases.
 
 ```
-adj.phi=adjust.phases(true.phi, inf.phi)                                
-plot(true.phi, adj.phi)                                                
+adj_phi=adjust.phases(true_phi, inf_phi)                                
+plot(true_phi, adj_phi)                                                
 ```
 
 

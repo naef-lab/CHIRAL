@@ -472,7 +472,7 @@ Zeta.mf.ordered<-function(J, beta, samples, A.0=0.1){
 }
 
 
-### Calculation of spin galss interaction matrix ###
+### Calculation of spin glass interaction matrix ###
 
 J.tilde<-function(E,n.genes=0,n.samples=0){
   sda<-as.matrix(E)
