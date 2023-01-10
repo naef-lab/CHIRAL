@@ -34,7 +34,7 @@ head(CRG_ens)
 ```
 Run the algorithm with the selected genes. 
 ```
-out<-CHIRAL(data, clockgenes = CRG_ens)   
+out<-CHIRAL(muscle_exon, clockgenes = CRG_ens)   
 ```
 ##### Outputs
 
