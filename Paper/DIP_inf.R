@@ -4,7 +4,7 @@
 list.of.packages <- c("lmtest", "ggplot2", "devtools")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) BiocManager::install(new.packages, force=TRUE)
-if(!("CHIRAL" %in% installed.packages()[,"Package"])) devtools::install_github("/naef-lab/CHIRAL/Pkg/CHIRAL")
+if(!("CHIRAL" %in% installed.packages()[,"Package"])) devtools::install_github("naef-lab/CHIRAL/Pkg/CHIRAL")
 library(CHIRAL)
 library(lmtest)
 library(ggplot2)
